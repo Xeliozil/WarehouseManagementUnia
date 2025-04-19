@@ -10,5 +10,6 @@
         <DataGrid x:Name="ProductsGrid" AutoGenerateColumns="True" Margin="10,10,10,60"/>
         <Button Content="Dodaj produkt" Width="100" Height="30" Margin="10,0,0,10" HorizontalAlignment="Left" VerticalAlignment="Bottom" Click="AddProduct_Click"/>
         <Button Content="Usuń produkt" Width="100" Height="30" Margin="120,0,0,10" HorizontalAlignment="Left" VerticalAlignment="Bottom" Click="DeleteProduct_Click"/>
+        <Button Content="Dodaj dostawę" Width="100" Height="30" Margin="230,0,0,10" HorizontalAlignment="Left" VerticalAlignment="Bottom" Click="AddDelivery_Click"/>
     </Grid>
 </Window>

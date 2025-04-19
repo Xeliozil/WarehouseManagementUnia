@@ -47,5 +47,14 @@ namespace WarehouseManagementUnia
                 LoadProducts();
             }
         }
+        private void AddDelivery_Click(object sender, RoutedEventArgs e)
+        {
+            var addDeliveryWindow = new AddDeliveryWindow();
+            if (addDeliveryWindow.ShowDialog() == true)
+            {
+                _dataAccess.AddDelivery(addDeliveryWindow.Delivery);
+                LoadProducts();
+            }
+        }
     }
 }
