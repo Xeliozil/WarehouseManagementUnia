@@ -8,6 +8,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System;
 using WarehouseManagementUnia.Data;
 using WarehouseManagementUnia.Models;
 
@@ -29,24 +30,6 @@ namespace WarehouseManagementUnia
             ProductsGrid.ItemsSource = _dataAccess.GetProducts();
         }
 
-        private void AddProduct_Click(object sender, RoutedEventArgs e)
-        {
-            var addWindow = new AddProductWindow();
-            if (addWindow.ShowDialog() == true)
-            {
-                _dataAccess.AddProduct(addWindow.Product);
-                LoadProducts();
-            }
-        }
-
-        private void DeleteProduct_Click(object sender, RoutedEventArgs e)
-        {
-            if (ProductsGrid.SelectedItem is Product selectedProduct)
-            {
-                _dataAccess.DeleteProduct(selectedProduct.Id);
-                LoadProducts();
-            }
-        }
         private void AddDelivery_Click(object sender, RoutedEventArgs e)
         {
             var addDeliveryWindow = new AddDeliveryWindow();
@@ -55,6 +38,18 @@ namespace WarehouseManagementUnia
                 _dataAccess.AddDelivery(addDeliveryWindow.Delivery);
                 LoadProducts();
             }
+        }
+
+        private void ShowDeliveries_Click(object sender, RoutedEventArgs e)
+        {
+            var deliveriesWindow = new DeliveriesWindow();
+            deliveriesWindow.Show();
+        }
+
+        private void ShowAllProducts_Click(object sender, RoutedEventArgs e)
+        {
+            var allProductsWindow = new AllProductsWindow();
+            allProductsWindow.Show();
         }
     }
 }
