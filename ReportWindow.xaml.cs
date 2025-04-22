@@ -1,8 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Win32;
 using WarehouseManagementUnia.Data;
+using WarehouseManagementUnia.Models;
 
 namespace WarehouseManagementUnia
 {
@@ -16,18 +19,26 @@ namespace WarehouseManagementUnia
             InitializeComponent();
             _dataAccess = new WarehouseDataAccess();
 
+            // Ustawienie tytułu raportu
             ReportTitleTextBox.Text = _dataAccess.GetReportCount(_currentYear).ToString("2025/000");
             StartDatePicker.SelectedDate = DateTime.Today.AddMonths(-1);
             EndDatePicker.SelectedDate = DateTime.Today;
 
-            ContractorComboBox.ItemsSource = _dataAccess.GetContractors();
-            ContractorComboBox.Items.Insert(0, new { Id = 0, Name = "Wszystkie" });
+            // Przygotowanie listy kontrahentów z opcją "Wszystkie"
+            var contractors = _dataAccess.GetContractors();
+            var contractorList = new List<object> { new { Id = 0, Name = "Wszystkie" } };
+            contractorList.AddRange(contractors.Select(c => new { c.Id, c.Name }));
+            ContractorComboBox.ItemsSource = contractorList;
             ContractorComboBox.SelectedIndex = 0;
 
-            ProductComboBox.ItemsSource = _dataAccess.GetProducts();
-            ProductComboBox.Items.Insert(0, new { Id = 0, Name = "Wszystkie" });
+            // Przygotowanie listy produktów z opcją "Wszystkie"
+            var products = _dataAccess.GetProducts();
+            var productList = new List<object> { new { Id = 0, Name = "Wszystkie" } };
+            productList.AddRange(products.Select(p => new { p.Id, p.Name }));
+            ProductComboBox.ItemsSource = productList;
             ProductComboBox.SelectedIndex = 0;
 
+            // Ustawienie domyślnego typu transakcji
             TransactionTypeComboBox.SelectedIndex = 0;
         }
 
@@ -55,8 +66,8 @@ namespace WarehouseManagementUnia
             {
                 try
                 {
-                    int? contractorId = ContractorComboBox.SelectedIndex == 0 ? null : (ContractorComboBox.SelectedItem as dynamic).Id;
-                    int? productId = ProductComboBox.SelectedIndex == 0 ? null : (ProductComboBox.SelectedItem as dynamic).Id;
+                    int? contractorId = ContractorComboBox.SelectedIndex == 0 ? null : ((dynamic)ContractorComboBox.SelectedItem).Id;
+                    int? productId = ProductComboBox.SelectedIndex == 0 ? null : ((dynamic)ProductComboBox.SelectedItem).Id;
                     string transactionType = TransactionTypeComboBox.SelectedIndex == 0 ? null : (TransactionTypeComboBox.SelectedItem as ComboBoxItem).Content.ToString();
 
                     _dataAccess.GenerateReport(
