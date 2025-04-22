@@ -1,16 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 using WarehouseManagementUnia.Models;
 
 namespace WarehouseManagementUnia
@@ -26,21 +15,25 @@ namespace WarehouseManagementUnia
 
         private void Save_Click(object sender, RoutedEventArgs e)
         {
-            if (int.TryParse(QuantityTextBox.Text, out int quantity) && decimal.TryParse(PriceTextBox.Text, out decimal price))
+            if (string.IsNullOrWhiteSpace(NameTextBox.Text) ||
+                !int.TryParse(QuantityTextBox.Text, out int quantity) ||
+                quantity < 0 ||
+                !decimal.TryParse(PriceTextBox.Text, out decimal price) ||
+                price < 0)
             {
-                Product = new Product
-                {
-                    Name = NameTextBox.Text,
-                    Quantity = quantity,
-                    Price = price
-                };
-                DialogResult = true;
-                Close();
+                MessageBox.Show("Wprowadź poprawne wartości: nazwa, ilość (nieujemna), cena (nieujemna).", "Błąd", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
             }
-            else
+
+            Product = new Product
             {
-                MessageBox.Show("Wprowadź poprawne wartości dla ilości i ceny.");
-            }
+                Name = NameTextBox.Text,
+                Quantity = quantity,
+                Price = price,
+                IsActive = quantity > 0
+            };
+            DialogResult = true;
+            Close();
         }
     }
 }

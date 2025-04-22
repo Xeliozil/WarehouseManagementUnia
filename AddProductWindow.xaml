@@ -8,7 +8,7 @@
         Title="AddProductWindow" Height="450" Width="800">
     <Grid Margin="10">
         <StackPanel>
-            <Label Content="Nazwa produktu"/>
+            <Label Content="Nazwa"/>
             <TextBox x:Name="NameTextBox" Width="200"/>
             <Label Content="Ilość"/>
             <TextBox x:Name="QuantityTextBox" Width="200"/>

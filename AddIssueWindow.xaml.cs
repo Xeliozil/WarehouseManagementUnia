@@ -6,16 +6,16 @@ using WarehouseManagementUnia.Models;
 
 namespace WarehouseManagementUnia
 {
-    public partial class AddDeliveryWindow : Window
+    public partial class AddIssueWindow : Window
     {
-        public Delivery Delivery { get; private set; }
+        public Issue Issue { get; private set; }
         private readonly WarehouseDataAccess _dataAccess;
 
-        public AddDeliveryWindow()
+        public AddIssueWindow()
         {
             InitializeComponent();
             _dataAccess = new WarehouseDataAccess();
-            DeliveryDateTextBox.Text = DateTime.Today.ToString("yyyy-MM-dd");
+            IssueDateTextBox.Text = DateTime.Today.ToString("yyyy-MM-dd");
             ProductComboBox.ItemsSource = _dataAccess.GetProductsForSelection();
             ProductComboBox.SelectedIndex = 0;
         }
@@ -25,16 +25,16 @@ namespace WarehouseManagementUnia
             if (ProductComboBox.SelectedItem == null ||
                 !int.TryParse(QuantityTextBox.Text, out int quantity) ||
                 quantity <= 0 ||
-                !DateTime.TryParse(DeliveryDateTextBox.Text, out DateTime deliveryDate))
+                !DateTime.TryParse(IssueDateTextBox.Text, out DateTime issueDate))
             {
-                MessageBox.Show("Wybierz produkt, wprowadź poprawną ilość (większą od 0) i datę dostawy.", "Błąd", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("Wybierz produkt, wprowadź poprawną ilość (większą od 0) i datę wydania.", "Błąd", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
-            if (deliveryDate > DateTime.Today)
+            if (issueDate > DateTime.Today)
             {
                 var result = MessageBox.Show(
-                    "Data dostawy jest w przyszłości. Czy na pewno chcesz kontynuować?",
+                    "Data wydania jest w przyszłości. Czy na pewno chcesz kontynuować?",
                     "Ostrzeżenie",
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Warning);
@@ -45,11 +45,11 @@ namespace WarehouseManagementUnia
             }
 
             var selectedProduct = (Product)ProductComboBox.SelectedItem;
-            Delivery = new Delivery
+            Issue = new Issue
             {
                 ProductId = selectedProduct.Id,
                 Quantity = quantity,
-                DeliveryDate = deliveryDate,
+                IssueDate = issueDate,
                 Description = string.IsNullOrWhiteSpace(DescriptionTextBox.Text) ? null : DescriptionTextBox.Text
             };
             DialogResult = true;
