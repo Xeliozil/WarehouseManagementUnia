@@ -1,17 +1,13 @@
 ﻿<Window x:Class="WarehouseManagementUnia.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Warehouse Management Unia" Height="450" Width="800">
+        Title="System zarządzania magazynem - Unia" Height="400" Width="600" WindowStartupLocation="CenterScreen">
     <Grid Margin="10">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
-        <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,10">
-            <Button Content="Stan magazynowy" Width="120" Height="30" Margin="0,0,10,0" Click="ShowStock_Click"/>
-            <Button Content="Dostawy i wydania" Width="120" Height="30" Margin="0,0,10,0" Click="ShowDeliveriesIssues_Click"/>
-            <Button Content="Wszystkie produkty" Width="120" Height="30" Click="ShowAllProducts_Click"/>
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+            <Button Content="Stany magazynowe" Width="150" Margin="0,10" Click="ShowStock_Click"/>
+            <Button Content="Dostawy i wydania" Width="150" Margin="0,10" Click="ShowDeliveriesIssues_Click"/>
+            <Button Content="Kontrahenci" Width="150" Margin="0,10" Click="ShowContractors_Click"/>
+            <Button Content="Raporty" Width="150" Margin="0,10" Click="ShowReports_Click"/>
         </StackPanel>
-        <ContentControl x:Name="MainContent" Grid.Row="1"/>
     </Grid>
 </Window>

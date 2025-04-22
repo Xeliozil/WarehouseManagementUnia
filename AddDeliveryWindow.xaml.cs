@@ -1,59 +1,68 @@
 ﻿using System;
 using System.Windows;
-using System.Linq;
 using WarehouseManagementUnia.Data;
-using WarehouseManagementUnia.Models;
+using WarehouseManagementUnia.Models; // Dodano
 
 namespace WarehouseManagementUnia
 {
     public partial class AddDeliveryWindow : Window
     {
-        public Delivery Delivery { get; private set; }
         private readonly WarehouseDataAccess _dataAccess;
 
         public AddDeliveryWindow()
         {
             InitializeComponent();
             _dataAccess = new WarehouseDataAccess();
-            DeliveryDateTextBox.Text = DateTime.Today.ToString("yyyy-MM-dd");
             ProductComboBox.ItemsSource = _dataAccess.GetProductsForSelection();
-            ProductComboBox.SelectedIndex = 0;
+            ContractorComboBox.ItemsSource = _dataAccess.GetContractors();
+            DeliveryDatePicker.SelectedDate = DateTime.Today;
         }
 
-        private void Save_Click(object sender, RoutedEventArgs e)
+        private void AddDelivery_Click(object sender, RoutedEventArgs e)
         {
-            if (ProductComboBox.SelectedItem == null ||
-                !int.TryParse(QuantityTextBox.Text, out int quantity) ||
-                quantity <= 0 ||
-                !DateTime.TryParse(DeliveryDateTextBox.Text, out DateTime deliveryDate))
+            if (ProductComboBox.SelectedItem == null)
             {
-                MessageBox.Show("Wybierz produkt, wprowadź poprawną ilość (większą od 0) i datę dostawy.", "Błąd", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("Wybierz produkt.", "Błąd", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
-            if (deliveryDate > DateTime.Today)
+            if (ContractorComboBox.SelectedItem == null)
             {
-                var result = MessageBox.Show(
-                    "Data dostawy jest w przyszłości. Czy na pewno chcesz kontynuować?",
-                    "Ostrzeżenie",
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Warning);
-                if (result != MessageBoxResult.Yes)
-                {
-                    return;
-                }
+                MessageBox.Show("Wybierz kontrahenta.", "Błąd", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
             }
 
-            var selectedProduct = (Product)ProductComboBox.SelectedItem;
-            Delivery = new Delivery
+            if (!int.TryParse(QuantityTextBox.Text, out int quantity) || quantity <= 0)
             {
-                ProductId = selectedProduct.Id,
-                Quantity = quantity,
-                DeliveryDate = deliveryDate,
-                Description = string.IsNullOrWhiteSpace(DescriptionTextBox.Text) ? null : DescriptionTextBox.Text
-            };
-            DialogResult = true;
-            Close();
+                MessageBox.Show("Podaj poprawną ilość.", "Błąd", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            if (!DeliveryDatePicker.SelectedDate.HasValue)
+            {
+                MessageBox.Show("Wybierz datę dostawy.", "Błąd", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            try
+            {
+                var delivery = new Delivery
+                {
+                    ProductId = ((Product)ProductComboBox.SelectedItem).Id,
+                    ContractorId = ((Contractor)ContractorComboBox.SelectedItem).Id,
+                    Quantity = quantity,
+                    DeliveryDate = DeliveryDatePicker.SelectedDate.Value,
+                    Description = DescriptionTextBox.Text
+                };
+
+                _dataAccess.AddDelivery(delivery);
+                MessageBox.Show("Dostawa dodana pomyślnie.", "Sukces", MessageBoxButton.OK, MessageBoxImage.Information);
+                Close();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Błąd podczas dodawania dostawy: {ex.Message}", "Błąd", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 }

@@ -4,6 +4,8 @@
              xmlns:local="clr-namespace:WarehouseManagementUnia"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-         
+        <Style x:Key="WrappingText" TargetType="TextBlock">
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
     </Application.Resources>
 </Application>

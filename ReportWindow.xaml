@@ -1,0 +1,31 @@
+﻿<Window x:Class="WarehouseManagementUnia.ReportWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Generuj raport" Height="450" Width="400">
+    <Grid Margin="10">
+        <StackPanel>
+            <Label Content="Tytuł raportu"/>
+            <TextBox x:Name="ReportTitleTextBox" Width="300" IsReadOnly="True"/>
+            <Label Content="Data od"/>
+            <DatePicker x:Name="StartDatePicker" Width="300"/>
+            <Label Content="Data do"/>
+            <DatePicker x:Name="EndDatePicker" Width="300"/>
+            <Label Content="Kontrahent"/>
+            <ComboBox x:Name="ContractorComboBox" Width="300" DisplayMemberPath="Name"/>
+            <Label Content="Produkt"/>
+            <ComboBox x:Name="ProductComboBox" Width="300" DisplayMemberPath="Name"/>
+            <Label Content="Typ transakcji"/>
+            <ComboBox x:Name="TransactionTypeComboBox" Width="300">
+                <ComboBoxItem Content="Wszystkie"/>
+                <ComboBoxItem Content="Dostawa"/>
+                <ComboBoxItem Content="Wydanie"/>
+            </ComboBox>
+            <Label Content="Format"/>
+            <ComboBox x:Name="FormatComboBox" Width="300" SelectedIndex="0">
+                <ComboBoxItem Content="PDF"/>
+                <ComboBoxItem Content="CSV"/>
+            </ComboBox>
+            <Button Content="Wybierz lokalizację i generuj" Width="200" Margin="0,10,0,0" Click="GenerateReport_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

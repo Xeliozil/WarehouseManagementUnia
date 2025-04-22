@@ -7,45 +7,47 @@ namespace WarehouseManagementUnia
     public partial class MainWindow : Window
     {
         private readonly WarehouseDataAccess _dataAccess;
-        private readonly StockView _stockView;
-        private readonly DeliveriesIssuesView _deliveriesIssuesView;
-        private readonly AllProductsView _allProductsView;
 
         public MainWindow()
         {
             InitializeComponent();
             _dataAccess = new WarehouseDataAccess();
-            _stockView = new StockView();
-            _deliveriesIssuesView = new DeliveriesIssuesView();
-            _allProductsView = new AllProductsView();
-            _deliveriesIssuesView.TransactionAdded += RefreshAllViews;
-            _allProductsView.ProductStatusChanged += RefreshAllViews;
-            MainContent.Content = _stockView;
         }
 
         private void ShowStock_Click(object sender, RoutedEventArgs e)
         {
-            MainContent.Content = _stockView;
-            RefreshAllViews();
+            var stockView = new StockView();
+            stockView.ShowDialog();
         }
 
         private void ShowDeliveriesIssues_Click(object sender, RoutedEventArgs e)
         {
-            MainContent.Content = _deliveriesIssuesView;
-            RefreshAllViews();
+            var deliveriesIssuesView = new DeliveriesIssuesView();
+            deliveriesIssuesView.TransactionAdded += RefreshAllViews;
+            deliveriesIssuesView.ShowDialog();
         }
 
-        private void ShowAllProducts_Click(object sender, RoutedEventArgs e)
+        private void ShowContractors_Click(object sender, RoutedEventArgs e)
         {
-            MainContent.Content = _allProductsView;
-            RefreshAllViews();
+            var contractorsWindow = new ContractorsWindow();
+            contractorsWindow.ShowDialog();
         }
 
-        private void RefreshAllViews()
+        private void ShowReports_Click(object sender, RoutedEventArgs e)
         {
-            _stockView.LoadProducts();
-            _allProductsView.LoadProducts();
-            _deliveriesIssuesView.LoadTransactions();
+            var reportWindow = new ReportWindow();
+            reportWindow.ShowDialog();
+        }
+
+        private void RefreshAllViews(object sender, EventArgs e)
+        {
+            // Odśwież dane w MainWindow, jeśli istnieją (np. DataGrid dla produktów)
+            // LoadMainWindowData();
+            // Odśwież otwarte okno DeliveriesIssuesView, jeśli istnieje
+            if (Application.Current.Windows.OfType<DeliveriesIssuesView>().FirstOrDefault() is DeliveriesIssuesView deliveriesIssuesView)
+            {
+                deliveriesIssuesView.LoadTransactions();
+            }
         }
     }
 }

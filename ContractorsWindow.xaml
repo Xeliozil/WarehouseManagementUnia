@@ -1,0 +1,22 @@
+﻿<Window x:Class="WarehouseManagementUnia.ContractorsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Zarządzaj kontrahentami" Height="450" Width="600">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+            <Button Content="Dodaj kontrahenta" Width="150" Margin="0,0,10,0" Click="AddContractor_Click"/>
+            <Button Content="Usuń kontrahenta" Width="150" Click="DeleteContractor_Click"/>
+        </StackPanel>
+        <DataGrid x:Name="ContractorsDataGrid" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Nazwa" Binding="{Binding Name}" Width="*"/>
+                <DataGridTextColumn Header="NIP" Binding="{Binding NIP}" Width="120"/>
+                <DataGridTextColumn Header="Adres" Binding="{Binding Address}" Width="*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</Window>

@@ -1,10 +1,9 @@
 ﻿using System.Windows;
-using System.Windows.Controls;
 using WarehouseManagementUnia.Data;
 
 namespace WarehouseManagementUnia
 {
-    public partial class StockView : UserControl
+    public partial class StockView : Window
     {
         private readonly WarehouseDataAccess _dataAccess;
 
@@ -15,14 +14,9 @@ namespace WarehouseManagementUnia
             LoadProducts();
         }
 
-        public void LoadProducts()
+        private void LoadProducts()
         {
-            ProductsGrid.ItemsSource = _dataAccess.GetProducts();
-        }
-
-        private void GenerateReport_Click(object sender, RoutedEventArgs e)
-        {
-            MessageBox.Show("Funkcja generowania raportu zostanie zaimplementowana później (zakres dat: od początku miesiąca do teraz, format PDF).", "Informacja", MessageBoxButton.OK, MessageBoxImage.Information);
+            ProductsDataGrid.ItemsSource = _dataAccess.GetProducts();
         }
     }
 }
