@@ -12,33 +12,29 @@ namespace WarehouseManagementUnia
     public partial class ReportWindow : Window
     {
         private readonly WarehouseDataAccess _dataAccess;
-        private readonly int _currentYear = DateTime.Now.Year; // Dynamicznie pobierany rok, np. 2025
+        private readonly int _currentYear = DateTime.Now.Year;
 
         public ReportWindow()
         {
             InitializeComponent();
             _dataAccess = new WarehouseDataAccess();
 
-            // Ustawienie tytułu raportu
             ReportTitleTextBox.Text = _dataAccess.GetReportCount(_currentYear).ToString("2025/000");
             StartDatePicker.SelectedDate = DateTime.Today.AddMonths(-1);
             EndDatePicker.SelectedDate = DateTime.Today;
 
-            // Przygotowanie listy kontrahentów z opcją "Wszystkie"
             var contractors = _dataAccess.GetContractors();
-            var contractorList = new List<object> { new { Id = 0, Name = "Wszystkie" } };
-            contractorList.AddRange(contractors.Select(c => new { c.Id, c.Name }));
+            var contractorList = new List<object> { new { Id = 0, NIP = "Wszystkie" } };
+            contractorList.AddRange(contractors.Select(c => new { c.Id, c.NIP }));
             ContractorComboBox.ItemsSource = contractorList;
             ContractorComboBox.SelectedIndex = 0;
 
-            // Przygotowanie listy produktów z opcją "Wszystkie"
             var products = _dataAccess.GetProducts();
             var productList = new List<object> { new { Id = 0, Name = "Wszystkie" } };
             productList.AddRange(products.Select(p => new { p.Id, p.Name }));
             ProductComboBox.ItemsSource = productList;
             ProductComboBox.SelectedIndex = 0;
 
-            // Ustawienie domyślnego typu transakcji
             TransactionTypeComboBox.SelectedIndex = 0;
         }
 

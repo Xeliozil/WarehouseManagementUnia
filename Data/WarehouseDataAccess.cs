@@ -31,7 +31,7 @@ namespace WarehouseManagementUnia.Data
             using (var connection = new SqlConnection(_connectionString))
             {
                 connection.Open();
-                var command = new SqlCommand("SELECT Id, Name, Quantity, Price, IsActive, ContractorId FROM Products WHERE IsActive = 1", connection);
+                var command = new SqlCommand("SELECT Id, Name, Quantity, Price, IsActive FROM Products WHERE IsActive = 1", connection);
                 using (var reader = command.ExecuteReader())
                 {
                     while (reader.Read())
@@ -42,8 +42,7 @@ namespace WarehouseManagementUnia.Data
                             Name = reader.GetString(1),
                             Quantity = reader.GetInt32(2),
                             Price = reader.GetDecimal(3),
-                            IsActive = reader.GetBoolean(4),
-                            ContractorId = reader.IsDBNull(5) ? null : reader.GetInt32(5)
+                            IsActive = reader.GetBoolean(4)
                         });
                     }
                 }
@@ -57,7 +56,7 @@ namespace WarehouseManagementUnia.Data
             using (var connection = new SqlConnection(_connectionString))
             {
                 connection.Open();
-                var command = new SqlCommand("SELECT Id, Name, Quantity, Price, IsActive, ContractorId FROM Products", connection);
+                var command = new SqlCommand("SELECT Id, Name, Quantity, Price, IsActive FROM Products", connection);
                 using (var reader = command.ExecuteReader())
                 {
                     while (reader.Read())
@@ -68,8 +67,7 @@ namespace WarehouseManagementUnia.Data
                             Name = reader.GetString(1),
                             Quantity = reader.GetInt32(2),
                             Price = reader.GetDecimal(3),
-                            IsActive = reader.GetBoolean(4),
-                            ContractorId = reader.IsDBNull(5) ? null : reader.GetInt32(5)
+                            IsActive = reader.GetBoolean(4)
                         });
                     }
                 }
@@ -105,13 +103,12 @@ namespace WarehouseManagementUnia.Data
             {
                 connection.Open();
                 var command = new SqlCommand(
-                    "INSERT INTO Products (Name, Quantity, Price, IsActive, ContractorId) VALUES (@Name, @Quantity, @Price, @IsActive, @ContractorId); SELECT SCOPE_IDENTITY();",
+                    "INSERT INTO Products (Name, Quantity, Price, IsActive) VALUES (@Name, @Quantity, @Price, @IsActive); SELECT SCOPE_IDENTITY();",
                     connection);
                 command.Parameters.AddWithValue("@Name", product.Name);
                 command.Parameters.AddWithValue("@Quantity", product.Quantity);
                 command.Parameters.AddWithValue("@Price", product.Price);
                 command.Parameters.AddWithValue("@IsActive", product.Quantity > 0);
-                command.Parameters.AddWithValue("@ContractorId", (object)product.ContractorId ?? DBNull.Value);
                 product.Id = Convert.ToInt32(command.ExecuteScalar());
             }
         }
@@ -152,9 +149,10 @@ namespace WarehouseManagementUnia.Data
                 }
 
                 var command = new SqlCommand(
-                    "INSERT INTO Deliveries (ProductId, Quantity, DeliveryDate, Description) VALUES (@ProductId, @Quantity, @DeliveryDate, @Description); SELECT SCOPE_IDENTITY();",
+                    "INSERT INTO Deliveries (ProductId, ContractorId, Quantity, DeliveryDate, Description) VALUES (@ProductId, @ContractorId, @Quantity, @DeliveryDate, @Description); SELECT SCOPE_IDENTITY();",
                     connection);
                 command.Parameters.AddWithValue("@ProductId", delivery.ProductId);
+                command.Parameters.AddWithValue("@ContractorId", (object)delivery.ContractorId ?? DBNull.Value);
                 command.Parameters.AddWithValue("@Quantity", delivery.Quantity);
                 command.Parameters.AddWithValue("@DeliveryDate", delivery.DeliveryDate);
                 command.Parameters.AddWithValue("@Description", (object)delivery.Description ?? DBNull.Value);
@@ -191,9 +189,10 @@ namespace WarehouseManagementUnia.Data
                 }
 
                 var command = new SqlCommand(
-                    "INSERT INTO Issues (ProductId, Quantity, IssueDate, Description) VALUES (@ProductId, @Quantity, @IssueDate, @Description); SELECT SCOPE_IDENTITY();",
+                    "INSERT INTO Issues (ProductId, ContractorId, Quantity, IssueDate, Description) VALUES (@ProductId, @ContractorId, @Quantity, @IssueDate, @Description); SELECT SCOPE_IDENTITY();",
                     connection);
                 command.Parameters.AddWithValue("@ProductId", issue.ProductId);
+                command.Parameters.AddWithValue("@ContractorId", (object)issue.ContractorId ?? DBNull.Value);
                 command.Parameters.AddWithValue("@Quantity", issue.Quantity);
                 command.Parameters.AddWithValue("@IssueDate", issue.IssueDate);
                 command.Parameters.AddWithValue("@Description", (object)issue.Description ?? DBNull.Value);
@@ -232,6 +231,45 @@ namespace WarehouseManagementUnia.Data
             return contractors;
         }
 
+        public void AddContractor(Contractor contractor)
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                connection.Open();
+                var command = new SqlCommand(
+                    "INSERT INTO Contractors (Name, Address, NIP) VALUES (@Name, @Address, @NIP); SELECT SCOPE_IDENTITY();",
+                    connection);
+                command.Parameters.AddWithValue("@Name", contractor.Name);
+                command.Parameters.AddWithValue("@Address", (object)contractor.Address ?? DBNull.Value);
+                command.Parameters.AddWithValue("@NIP", (object)contractor.NIP ?? DBNull.Value);
+                contractor.Id = Convert.ToInt32(command.ExecuteScalar());
+            }
+        }
+
+        public void DeleteContractor(int id)
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                connection.Open();
+                var checkCommand = new SqlCommand(
+                    "SELECT COUNT(*) FROM Deliveries WHERE ContractorId = @Id UNION ALL SELECT COUNT(*) FROM Issues WHERE ContractorId = @Id",
+                    connection);
+                checkCommand.Parameters.AddWithValue("@Id", id);
+                using (var reader = checkCommand.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        if (reader.GetInt32(0) > 0)
+                            throw new InvalidOperationException("Nie można usunąć kontrahenta, który jest powiązany z dostawami lub wydaniami.");
+                    }
+                }
+
+                var command = new SqlCommand("DELETE FROM Contractors WHERE Id = @Id", connection);
+                command.Parameters.AddWithValue("@Id", id);
+                command.ExecuteNonQuery();
+            }
+        }
+
         public List<Delivery> GetDeliveries()
         {
             var deliveries = new List<Delivery>();
@@ -239,10 +277,10 @@ namespace WarehouseManagementUnia.Data
             {
                 connection.Open();
                 var command = new SqlCommand(
-                    @"SELECT d.Id, d.ProductId, p.Name, c.Name, d.Quantity, d.DeliveryDate, d.Description
+                    @"SELECT d.Id, d.ProductId, p.Name, d.ContractorId, c.NIP, d.Quantity, d.DeliveryDate, d.Description
                       FROM Deliveries d
                       INNER JOIN Products p ON d.ProductId = p.Id
-                      LEFT JOIN Contractors c ON p.ContractorId = c.Id", connection);
+                      LEFT JOIN Contractors c ON d.ContractorId = c.Id", connection);
                 using (var reader = command.ExecuteReader())
                 {
                     while (reader.Read())
@@ -252,10 +290,11 @@ namespace WarehouseManagementUnia.Data
                             Id = reader.GetInt32(0),
                             ProductId = reader.GetInt32(1),
                             ProductName = reader.GetString(2),
-                            ContractorName = reader.IsDBNull(3) ? null : reader.GetString(3),
-                            Quantity = reader.GetInt32(4),
-                            DeliveryDate = reader.GetDateTime(5),
-                            Description = reader.IsDBNull(6) ? null : reader.GetString(6)
+                            ContractorId = reader.IsDBNull(3) ? null : reader.GetInt32(3),
+                            ContractorNIP = reader.IsDBNull(4) ? null : reader.GetString(4),
+                            Quantity = reader.GetInt32(5),
+                            DeliveryDate = reader.GetDateTime(6),
+                            Description = reader.IsDBNull(7) ? null : reader.GetString(7)
                         });
                     }
                 }
@@ -270,10 +309,10 @@ namespace WarehouseManagementUnia.Data
             {
                 connection.Open();
                 var command = new SqlCommand(
-                    @"SELECT i.Id, i.ProductId, p.Name, c.Name, i.Quantity, i.IssueDate, i.Description
+                    @"SELECT i.Id, i.ProductId, p.Name, i.ContractorId, c.NIP, i.Quantity, i.IssueDate, i.Description
                       FROM Issues i
                       INNER JOIN Products p ON i.ProductId = p.Id
-                      LEFT JOIN Contractors c ON p.ContractorId = c.Id", connection);
+                      LEFT JOIN Contractors c ON i.ContractorId = c.Id", connection);
                 using (var reader = command.ExecuteReader())
                 {
                     while (reader.Read())
@@ -283,10 +322,11 @@ namespace WarehouseManagementUnia.Data
                             Id = reader.GetInt32(0),
                             ProductId = reader.GetInt32(1),
                             ProductName = reader.GetString(2),
-                            ContractorName = reader.IsDBNull(3) ? null : reader.GetString(3),
-                            Quantity = reader.GetInt32(4),
-                            IssueDate = reader.GetDateTime(5),
-                            Description = reader.IsDBNull(6) ? null : reader.GetString(6)
+                            ContractorId = reader.IsDBNull(3) ? null : reader.GetInt32(3),
+                            ContractorNIP = reader.IsDBNull(4) ? null : reader.GetString(4),
+                            Quantity = reader.GetInt32(5),
+                            IssueDate = reader.GetDateTime(6),
+                            Description = reader.IsDBNull(7) ? null : reader.GetString(7)
                         });
                     }
                 }
@@ -353,8 +393,8 @@ namespace WarehouseManagementUnia.Data
 
             if (contractorId.HasValue)
             {
-                deliveries = deliveries.Where(d => d.ContractorName == GetContractors().FirstOrDefault(c => c.Id == contractorId)?.Name);
-                issues = issues.Where(i => i.ContractorName == GetContractors().FirstOrDefault(c => c.Id == contractorId)?.Name);
+                deliveries = deliveries.Where(d => d.ContractorId == contractorId);
+                issues = issues.Where(i => i.ContractorId == contractorId);
             }
 
             if (productId.HasValue)
@@ -379,7 +419,7 @@ namespace WarehouseManagementUnia.Data
                     Id = delivery.Id,
                     ProductId = delivery.ProductId,
                     ProductName = delivery.ProductName,
-                    ContractorName = delivery.ContractorName ?? "",
+                    ContractorNIP = delivery.ContractorNIP ?? "",
                     Quantity = delivery.Quantity,
                     Date = delivery.DeliveryDate,
                     Description = delivery.Description ?? ""
@@ -394,7 +434,7 @@ namespace WarehouseManagementUnia.Data
                     Id = issue.Id,
                     ProductId = issue.ProductId,
                     ProductName = issue.ProductName,
-                    ContractorName = issue.ContractorName ?? "",
+                    ContractorNIP = issue.ContractorNIP ?? "",
                     Quantity = issue.Quantity,
                     Date = issue.IssueDate,
                     Description = issue.Description ?? ""
@@ -424,7 +464,7 @@ namespace WarehouseManagementUnia.Data
                     // Filters
                     var filterText = new List<string>();
                     if (contractorId.HasValue)
-                        filterText.Add($"Kontrahent: {GetContractors().FirstOrDefault(c => c.Id == contractorId)?.Name}");
+                        filterText.Add($"Kontrahent: {GetContractors().FirstOrDefault(c => c.Id == contractorId)?.NIP}");
                     if (productId.HasValue)
                         filterText.Add($"Produkt: {GetProducts().FirstOrDefault(p => p.Id == productId)?.Name}");
                     if (!string.IsNullOrEmpty(transactionType))
@@ -443,7 +483,7 @@ namespace WarehouseManagementUnia.Data
                         { "ID", 40 },
                         { "ID produktu", 50 },
                         { "Nazwa produktu", 100 },
-                        { "Kontrahent", 100 },
+                        { "NIP kontrahenta", 100 },
                         { "Ilość", 60 },
                         { "Data", 80 },
                         { "Opis", 100 }
@@ -455,7 +495,7 @@ namespace WarehouseManagementUnia.Data
                     textFormatter.DrawString("ID", fontNormal, XBrushes.Black, new XRect(100, y, columnWidths["ID"], 40), XStringFormats.TopLeft);
                     textFormatter.DrawString("ID produktu", fontNormal, XBrushes.Black, new XRect(140, y, columnWidths["ID produktu"], 40), XStringFormats.TopLeft);
                     textFormatter.DrawString("Nazwa produktu", fontNormal, XBrushes.Black, new XRect(190, y, columnWidths["Nazwa produktu"], 40), XStringFormats.TopLeft);
-                    textFormatter.DrawString("Kontrahent", fontNormal, XBrushes.Black, new XRect(290, y, columnWidths["Kontrahent"], 40), XStringFormats.TopLeft);
+                    textFormatter.DrawString("NIP kontrahenta", fontNormal, XBrushes.Black, new XRect(290, y, columnWidths["NIP kontrahenta"], 40), XStringFormats.TopLeft);
                     textFormatter.DrawString("Ilość", fontNormal, XBrushes.Black, new XRect(390, y, columnWidths["Ilość"], 40), XStringFormats.TopLeft);
                     textFormatter.DrawString("Data", fontNormal, XBrushes.Black, new XRect(450, y, columnWidths["Data"], 40), XStringFormats.TopLeft);
                     textFormatter.DrawString("Opis", fontNormal, XBrushes.Black, new XRect(530, y, columnWidths["Opis"], 40), XStringFormats.TopLeft);
@@ -475,10 +515,10 @@ namespace WarehouseManagementUnia.Data
                         }
 
                         var productNameRect = new XRect(190, y, columnWidths["Nazwa produktu"], 100);
-                        var contractorRect = new XRect(290, y, columnWidths["Kontrahent"], 100);
+                        var contractorRect = new XRect(290, y, columnWidths["NIP kontrahenta"], 100);
                         var descriptionRect = new XRect(530, y, columnWidths["Opis"], 100);
                         double productNameHeight = MeasureWrappedTextHeight(gfx, transaction.ProductName ?? "", fontNormal, columnWidths["Nazwa produktu"]);
-                        double contractorHeight = MeasureWrappedTextHeight(gfx, transaction.ContractorName ?? "", fontNormal, columnWidths["Kontrahent"]);
+                        double contractorHeight = MeasureWrappedTextHeight(gfx, transaction.ContractorNIP ?? "", fontNormal, columnWidths["NIP kontrahenta"]);
                         double descriptionHeight = MeasureWrappedTextHeight(gfx, transaction.Description ?? "", fontNormal, columnWidths["Opis"]);
                         double rowHeight = Math.Max(20, Math.Max(productNameHeight, Math.Max(contractorHeight, descriptionHeight)));
 
@@ -486,7 +526,7 @@ namespace WarehouseManagementUnia.Data
                         textFormatter.DrawString(transaction.Id.ToString(), fontNormal, XBrushes.Black, new XRect(100, y, columnWidths["ID"], rowHeight), XStringFormats.TopLeft);
                         textFormatter.DrawString(transaction.ProductId.ToString(), fontNormal, XBrushes.Black, new XRect(140, y, columnWidths["ID produktu"], rowHeight), XStringFormats.TopLeft);
                         textFormatter.DrawString(transaction.ProductName ?? "", fontNormal, XBrushes.Black, productNameRect, XStringFormats.TopLeft);
-                        textFormatter.DrawString(transaction.ContractorName ?? "", fontNormal, XBrushes.Black, contractorRect, XStringFormats.TopLeft);
+                        textFormatter.DrawString(transaction.ContractorNIP ?? "", fontNormal, XBrushes.Black, contractorRect, XStringFormats.TopLeft);
                         textFormatter.DrawString(transaction.Quantity.ToString(), fontNormal, XBrushes.Black, new XRect(390, y, columnWidths["Ilość"], rowHeight), XStringFormats.TopLeft);
                         textFormatter.DrawString(transaction.Date.ToString("yyyy-MM-dd"), fontNormal, XBrushes.Black, new XRect(450, y, columnWidths["Data"], rowHeight), XStringFormats.TopLeft);
                         textFormatter.DrawString(transaction.Description ?? "", fontNormal, XBrushes.Black, descriptionRect, XStringFormats.TopLeft);
@@ -505,7 +545,7 @@ namespace WarehouseManagementUnia.Data
             else if (format == "CSV")
             {
                 var csv = new StringBuilder();
-                csv.AppendLine("Typ,ID,ID produktu,Nazwa produktu,Kontrahent,Ilość,Data,Opis");
+                csv.AppendLine("Typ,ID,ID produktu,Nazwa produktu,NIP kontrahenta,Ilość,Data,Opis");
                 foreach (var transaction in transactions.OrderBy(t => t.Date))
                 {
                     var fields = new[]
@@ -514,7 +554,7 @@ namespace WarehouseManagementUnia.Data
                         transaction.Id.ToString(),
                         transaction.ProductId.ToString(),
                         $"\"{transaction.ProductName?.Replace("\"", "\"\"") ?? ""}\"",
-                        $"\"{transaction.ContractorName?.Replace("\"", "\"\"") ?? ""}\"",
+                        $"\"{transaction.ContractorNIP?.Replace("\"", "\"\"") ?? ""}\"",
                         transaction.Quantity.ToString(),
                         $"\"{transaction.Date:yyyy-MM-dd}\"",
                         $"\"{transaction.Description?.Replace("\"", "\"\"") ?? ""}\""
@@ -525,4 +565,4 @@ namespace WarehouseManagementUnia.Data
             }
         }
     }
-}   
+}

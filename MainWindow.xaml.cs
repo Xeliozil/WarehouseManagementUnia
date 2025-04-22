@@ -7,45 +7,48 @@ namespace WarehouseManagementUnia
     public partial class MainWindow : Window
     {
         private readonly WarehouseDataAccess _dataAccess;
-        private readonly StockView _stockView;
-        private readonly DeliveriesIssuesView _deliveriesIssuesView;
-        private readonly AllProductsView _allProductsView;
 
         public MainWindow()
         {
             InitializeComponent();
             _dataAccess = new WarehouseDataAccess();
-            _stockView = new StockView();
-            _deliveriesIssuesView = new DeliveriesIssuesView();
-            _allProductsView = new AllProductsView();
-            _deliveriesIssuesView.TransactionAdded += RefreshAllViews;
-            _allProductsView.ProductStatusChanged += RefreshAllViews;
-            MainContent.Content = _stockView;
+            LoadMainWindowData();
         }
 
-        private void ShowStock_Click(object sender, RoutedEventArgs e)
+        private void OpenDeliveriesIssuesView_Click(object sender, RoutedEventArgs e)
         {
-            MainContent.Content = _stockView;
-            RefreshAllViews();
+            var view = new DeliveriesIssuesView();
+            view.TransactionAdded += RefreshAllViews; // Poprawna subskrypcja
+            view.ShowDialog();
         }
 
-        private void ShowDeliveriesIssues_Click(object sender, RoutedEventArgs e)
+        private void RefreshAllViews(object sender, EventArgs e)
         {
-            MainContent.Content = _deliveriesIssuesView;
-            RefreshAllViews();
+            LoadMainWindowData();
+            // Jeśli DeliveriesIssuesView jest otwarte, odśwież jego DataGrid
+            if (Application.Current.Windows.OfType<DeliveriesIssuesView>().FirstOrDefault() is DeliveriesIssuesView deliveriesIssuesView)
+            {
+                deliveriesIssuesView.LoadTransactions();
+            }
         }
 
-        private void ShowAllProducts_Click(object sender, RoutedEventArgs e)
+        private void LoadMainWindowData()
         {
-            MainContent.Content = _allProductsView;
-            RefreshAllViews();
+            // Przykład: Ładowanie danych do DataGrid w MainWindow
+            // Zakładam, że MainWindow ma DataGrid dla produktów lub transakcji
+            // Dostosuj do swojego kodu
+            // ProductsDataGrid.ItemsSource = _dataAccess.GetProducts();
         }
 
-        private void RefreshAllViews()
+        // Dodaj inne metody, np. dla ContractorsWindow, ReportWindow
+        private void OpenContractorsWindow_Click(object sender, RoutedEventArgs e)
         {
-            _stockView.LoadProducts();
-            _allProductsView.LoadProducts();
-            _deliveriesIssuesView.LoadTransactions();
+            new ContractorsWindow().ShowDialog();
+        }
+
+        private void OpenReportWindow_Click(object sender, RoutedEventArgs e)
+        {
+            new ReportWindow().ShowDialog();
         }
     }
 }
