@@ -13,5 +13,6 @@ namespace WarehouseManagementUnia.Models
         public int Quantity { get; set; }
         public decimal Price { get; set; }
         public bool IsActive { get; set; }
+        public override string ToString() => $"{Name} (ID: {Id})";
     }
 }

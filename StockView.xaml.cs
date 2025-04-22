@@ -22,7 +22,8 @@ namespace WarehouseManagementUnia
 
         private void GenerateReport_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("Funkcja generowania raportu zostanie zaimplementowana później (zakres dat: od początku miesiąca do teraz, format PDF).", "Informacja", MessageBoxButton.OK, MessageBoxImage.Information);
+            var reportWindow = new ReportWindow();
+            reportWindow.ShowDialog();
         }
     }
 }

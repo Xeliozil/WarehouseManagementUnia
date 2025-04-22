@@ -5,7 +5,7 @@
     <Grid Margin="10">
         <StackPanel>
             <Label Content="Nazwa produktu"/>
-            <ComboBox x:Name="ProductComboBox" Width="200" DisplayMemberPath="Name"/>
+            <ComboBox x:Name="ProductComboBox" Width="200"/>
             <Label Content="Ilość"/>
             <TextBox x:Name="QuantityTextBox" Width="200"/>
             <Label Content="Data dostawy (rrrr-mm-dd)"/>

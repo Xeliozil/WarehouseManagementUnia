@@ -16,7 +16,14 @@ namespace WarehouseManagementUnia
             InitializeComponent();
             _dataAccess = new WarehouseDataAccess();
             DeliveryDateTextBox.Text = DateTime.Today.ToString("yyyy-MM-dd");
-            ProductComboBox.ItemsSource = _dataAccess.GetProductsForSelection();
+            var products = _dataAccess.GetProductsForSelection();
+            if (!products.Any())
+            {
+                MessageBox.Show("Brak produktów w bazie. Dodaj produkt w widoku 'Wszystkie produkty'.", "Informacja", MessageBoxButton.OK, MessageBoxImage.Information);
+                Close();
+                return;
+            }
+            ProductComboBox.ItemsSource = products;
             ProductComboBox.SelectedIndex = 0;
         }
 
