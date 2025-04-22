@@ -1,9 +1,13 @@
-﻿<Window x:Class="WarehouseManagementUnia.StockView"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Stany magazynowe" Height="400" Width="600" WindowStartupLocation="CenterScreen">
+﻿<UserControl x:Class="WarehouseManagementUnia.StockView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Grid Margin="10">
-        <GroupBox Header="Lista produktów">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Button Content="&lt;" FontSize="16" Width="30" Height="30" HorizontalAlignment="Left" Click="Back_Click"/>
+        <GroupBox Grid.Row="1" Header="Stany magazynowe">
             <DataGrid x:Name="ProductsDataGrid" AutoGenerateColumns="False" IsReadOnly="True" Margin="5">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="50"/>
@@ -15,4 +19,4 @@
             </DataGrid>
         </GroupBox>
     </Grid>
-</Window>
+</UserControl>

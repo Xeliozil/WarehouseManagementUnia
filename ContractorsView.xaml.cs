@@ -4,20 +4,27 @@ using WarehouseManagementUnia.Data;
 
 namespace WarehouseManagementUnia
 {
-    public partial class StockView : UserControl
+    public partial class ContractorsView : UserControl
     {
         private readonly WarehouseDataAccess _dataAccess;
 
-        public StockView()
+        public ContractorsView()
         {
             InitializeComponent();
             _dataAccess = new WarehouseDataAccess();
-            LoadProducts();
+            LoadContractors();
         }
 
-        private void LoadProducts()
+        private void LoadContractors()
         {
-            ProductsDataGrid.ItemsSource = _dataAccess.GetProducts();
+            ContractorsDataGrid.ItemsSource = _dataAccess.GetContractors();
+        }
+
+        private void AddContractor_Click(object sender, RoutedEventArgs e)
+        {
+            var addContractorWindow = new AddContractorWindow();
+            addContractorWindow.ContractorAdded += (s, args) => LoadContractors();
+            addContractorWindow.ShowDialog();
         }
 
         private void Back_Click(object sender, RoutedEventArgs e)
