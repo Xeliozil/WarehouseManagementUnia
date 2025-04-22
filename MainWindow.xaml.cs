@@ -1,65 +1,51 @@
-﻿using System.Text;
+﻿using System;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using System;
 using WarehouseManagementUnia.Data;
-using WarehouseManagementUnia.Models;
 
 namespace WarehouseManagementUnia
 {
     public partial class MainWindow : Window
     {
         private readonly WarehouseDataAccess _dataAccess;
-        private readonly ActiveProductsView _activeProductsView;
-        private readonly DeliveriesView _deliveriesView;
+        private readonly StockView _stockView;
+        private readonly DeliveriesIssuesView _deliveriesIssuesView;
         private readonly AllProductsView _allProductsView;
 
         public MainWindow()
         {
             InitializeComponent();
             _dataAccess = new WarehouseDataAccess();
-            _activeProductsView = new ActiveProductsView();
-            _deliveriesView = new DeliveriesView();
+            _stockView = new StockView();
+            _deliveriesIssuesView = new DeliveriesIssuesView();
             _allProductsView = new AllProductsView();
-            _allProductsView.ProductStatusChanged += RefreshActiveProducts;
-            MainContent.Content = _activeProductsView;
+            _deliveriesIssuesView.TransactionAdded += RefreshAllViews;
+            _allProductsView.ProductStatusChanged += RefreshAllViews;
+            MainContent.Content = _stockView;
         }
 
-        private void ShowActiveProducts_Click(object sender, RoutedEventArgs e)
+        private void ShowStock_Click(object sender, RoutedEventArgs e)
         {
-            MainContent.Content = _activeProductsView;
+            MainContent.Content = _stockView;
+            RefreshAllViews();
         }
 
-        private void ShowDeliveries_Click(object sender, RoutedEventArgs e)
+        private void ShowDeliveriesIssues_Click(object sender, RoutedEventArgs e)
         {
-            MainContent.Content = _deliveriesView;
+            MainContent.Content = _deliveriesIssuesView;
+            RefreshAllViews();
         }
 
         private void ShowAllProducts_Click(object sender, RoutedEventArgs e)
         {
             MainContent.Content = _allProductsView;
+            RefreshAllViews();
         }
 
-        private void AddDelivery_Click(object sender, RoutedEventArgs e)
+        private void RefreshAllViews()
         {
-            var addDeliveryWindow = new AddDeliveryWindow();
-            if (addDeliveryWindow.ShowDialog() == true)
-            {
-                _dataAccess.AddDelivery(addDeliveryWindow.Delivery);
-                _activeProductsView.LoadProducts();
-            }
-        }
-
-        private void RefreshActiveProducts()
-        {
-            _activeProductsView.LoadProducts();
+            _stockView.LoadProducts();
+            _allProductsView.LoadProducts();
+            _deliveriesIssuesView.LoadTransactions();
         }
     }
 }

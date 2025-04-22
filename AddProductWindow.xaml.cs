@@ -1,16 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 using WarehouseManagementUnia.Models;
 
 namespace WarehouseManagementUnia
@@ -28,9 +17,11 @@ namespace WarehouseManagementUnia
         {
             if (string.IsNullOrWhiteSpace(NameTextBox.Text) ||
                 !int.TryParse(QuantityTextBox.Text, out int quantity) ||
-                !decimal.TryParse(PriceTextBox.Text, out decimal price))
+                quantity < 0 ||
+                !decimal.TryParse(PriceTextBox.Text, out decimal price) ||
+                price < 0)
             {
-                MessageBox.Show("Wprowadź poprawne wartości dla nazwy, ilości i ceny.");
+                MessageBox.Show("Wprowadź poprawne wartości: nazwa, ilość (nieujemna), cena (nieujemna).", "Błąd", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
@@ -39,7 +30,7 @@ namespace WarehouseManagementUnia
                 Name = NameTextBox.Text,
                 Quantity = quantity,
                 Price = price,
-                IsActive = true
+                IsActive = quantity > 0
             };
             DialogResult = true;
             Close();

@@ -18,7 +18,7 @@ namespace WarehouseManagementUnia
             LoadProducts();
         }
 
-        private void LoadProducts()
+        public void LoadProducts()
         {
             ProductsGrid.ItemsSource = _dataAccess.GetAllProducts();
         }
@@ -30,15 +30,6 @@ namespace WarehouseManagementUnia
             {
                 _dataAccess.AddProduct(addWindow.Product);
                 LoadProducts();
-            }
-        }
-
-        private void ToggleActive_Click(object sender, RoutedEventArgs e)
-        {
-            if (ProductsGrid.SelectedItem is Product selectedProduct)
-            {
-                _dataAccess.SetProductActiveStatus(selectedProduct.Id, !selectedProduct.IsActive);
-                LoadProducts();
                 ProductStatusChanged?.Invoke();
             }
         }
@@ -47,17 +38,26 @@ namespace WarehouseManagementUnia
         {
             if (ProductsGrid.SelectedItem is Product selectedProduct)
             {
-                bool deleted = _dataAccess.DeleteProduct(selectedProduct.Id);
-                if (deleted)
+                var result = MessageBox.Show(
+                    "Czy chcesz usunąć historię dostaw związanych z tym przedmiotem?",
+                    "Potwierdzenie usunięcia",
+                    MessageBoxButton.YesNoCancel,
+                    MessageBoxImage.Question);
+
+                if (result == MessageBoxResult.Yes)
                 {
+                    _dataAccess.HardDeleteProduct(selectedProduct.Id);
                     LoadProducts();
                     ProductStatusChanged?.Invoke();
                 }
-                else
+                else if (result == MessageBoxResult.No)
                 {
-                    MessageBox.Show("Nie można usunąć produktu, ponieważ jest powiązany z dostawami.", "Błąd usuwania", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    _dataAccess.SoftDeleteProduct(selectedProduct.Id);
+                    LoadProducts();
+                    ProductStatusChanged?.Invoke();
                 }
+                // Cancel nic nie robi
             }
         }
     }
-}   
+}
