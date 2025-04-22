@@ -11,23 +11,41 @@ using System.Windows.Shapes;
 using System;
 using WarehouseManagementUnia.Data;
 using WarehouseManagementUnia.Models;
+using System;
 
 namespace WarehouseManagementUnia
 {
     public partial class MainWindow : Window
     {
         private readonly WarehouseDataAccess _dataAccess;
+        private readonly ActiveProductsView _activeProductsView;
+        private readonly DeliveriesView _deliveriesView;
+        private readonly AllProductsView _allProductsView;
 
         public MainWindow()
         {
             InitializeComponent();
             _dataAccess = new WarehouseDataAccess();
-            LoadProducts();
+            _activeProductsView = new ActiveProductsView();
+            _deliveriesView = new DeliveriesView();
+            _allProductsView = new AllProductsView();
+            _allProductsView.ProductStatusChanged += RefreshActiveProducts;
+            MainContent.Content = _activeProductsView; // Default view
         }
 
-        private void LoadProducts()
+        private void ShowActiveProducts_Click(object sender, RoutedEventArgs e)
         {
-            ProductsGrid.ItemsSource = _dataAccess.GetProducts();
+            MainContent.Content = _activeProductsView;
+        }
+
+        private void ShowDeliveries_Click(object sender, RoutedEventArgs e)
+        {
+            MainContent.Content = _deliveriesView;
+        }
+
+        private void ShowAllProducts_Click(object sender, RoutedEventArgs e)
+        {
+            MainContent.Content = _allProductsView;
         }
 
         private void AddDelivery_Click(object sender, RoutedEventArgs e)
@@ -36,20 +54,13 @@ namespace WarehouseManagementUnia
             if (addDeliveryWindow.ShowDialog() == true)
             {
                 _dataAccess.AddDelivery(addDeliveryWindow.Delivery);
-                LoadProducts();
+                _activeProductsView.LoadProducts(); // Refresh active products
             }
         }
 
-        private void ShowDeliveries_Click(object sender, RoutedEventArgs e)
+        private void RefreshActiveProducts()
         {
-            var deliveriesWindow = new DeliveriesWindow();
-            deliveriesWindow.Show();
-        }
-
-        private void ShowAllProducts_Click(object sender, RoutedEventArgs e)
-        {
-            var allProductsWindow = new AllProductsWindow();
-            allProductsWindow.Show();
+            _activeProductsView.LoadProducts();
         }
     }
 }

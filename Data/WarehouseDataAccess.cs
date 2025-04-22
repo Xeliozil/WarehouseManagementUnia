@@ -1,9 +1,11 @@
-﻿using System;
-using System.Data.SqlClient;
+﻿using System.Data.SqlClient;
 using System.Collections.Generic;
 using WarehouseManagementUnia.Models;
 using Microsoft.Extensions.Configuration;
 using System.IO;
+using System.Collections;
+using System;
+using System.Collections.Generic;
 
 namespace WarehouseManagementUnia.Data
 {
@@ -81,7 +83,7 @@ namespace WarehouseManagementUnia.Data
                 command.Parameters.AddWithValue("@Name", product.Name);
                 command.Parameters.AddWithValue("@Quantity", product.Quantity);
                 command.Parameters.AddWithValue("@Price", product.Price);
-                command.Parameters.AddWithValue("@IsActive", true); // New products are active
+                command.Parameters.AddWithValue("@IsActive", true);
                 product.Id = Convert.ToInt32(command.ExecuteScalar());
             }
         }
@@ -97,7 +99,7 @@ namespace WarehouseManagementUnia.Data
 
                 if (deliveryCount > 0)
                 {
-                    return false; // Cannot delete due to deliveries
+                    return false;
                 }
 
                 var deleteCommand = new SqlCommand("DELETE FROM Products WHERE Id = @Id", connection);
@@ -153,12 +155,13 @@ namespace WarehouseManagementUnia.Data
             return deliveries;
         }
 
-        public void SetProductInactive(int id)
+        public void SetProductActiveStatus(int id, bool isActive)
         {
             using (var connection = new SqlConnection(_connectionString))
             {
                 connection.Open();
-                var command = new SqlCommand("UPDATE Products SET IsActive = 0 WHERE Id = @Id", connection);
+                var command = new SqlCommand("UPDATE Products SET IsActive = @IsActive WHERE Id = @Id", connection);
+                command.Parameters.AddWithValue("@IsActive", isActive);
                 command.Parameters.AddWithValue("@Id", id);
                 command.ExecuteNonQuery();
             }

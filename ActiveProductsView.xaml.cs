@@ -10,25 +10,26 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
 using System.Windows.Shapes;
 using WarehouseManagementUnia.Data;
 
 namespace WarehouseManagementUnia
 {
-    public partial class DeliveriesWindow : Window
+    public partial class ActiveProductsView : UserControl
     {
         private readonly WarehouseDataAccess _dataAccess;
 
-        public DeliveriesWindow()
+        public ActiveProductsView()
         {
             InitializeComponent();
             _dataAccess = new WarehouseDataAccess();
-            LoadDeliveries();
+            LoadProducts();
         }
 
-        private void LoadDeliveries()
+        public void LoadProducts()
         {
-            DeliveriesGrid.ItemsSource = _dataAccess.GetDeliveries();
+            ProductsGrid.ItemsSource = _dataAccess.GetProducts();
         }
     }
 }

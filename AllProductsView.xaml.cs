@@ -10,17 +10,20 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System;
 using WarehouseManagementUnia.Data;
 using WarehouseManagementUnia.Models;
 
 namespace WarehouseManagementUnia
 {
-    public partial class AllProductsWindow : Window
+    public partial class AllProductsView : UserControl
     {
         private readonly WarehouseDataAccess _dataAccess;
+        public event Action ProductStatusChanged; // Event to notify main window
 
-        public AllProductsWindow()
+        public AllProductsView()
         {
             InitializeComponent();
             _dataAccess = new WarehouseDataAccess();
@@ -42,12 +45,13 @@ namespace WarehouseManagementUnia
             }
         }
 
-        private void DeactivateProduct_Click(object sender, RoutedEventArgs e)
+        private void ToggleActive_Click(object sender, RoutedEventArgs e)
         {
             if (ProductsGrid.SelectedItem is Product selectedProduct)
             {
-                _dataAccess.SetProductInactive(selectedProduct.Id);
+                _dataAccess.SetProductActiveStatus(selectedProduct.Id, !selectedProduct.IsActive);
                 LoadProducts();
+                ProductStatusChanged?.Invoke(); // Notify main window
             }
         }
 
@@ -59,6 +63,7 @@ namespace WarehouseManagementUnia
                 if (deleted)
                 {
                     LoadProducts();
+                    ProductStatusChanged?.Invoke(); // Notify main window
                 }
                 else
                 {
