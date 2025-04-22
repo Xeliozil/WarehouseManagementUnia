@@ -1,18 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using System;
 using WarehouseManagementUnia.Data;
 using WarehouseManagementUnia.Models;
 
@@ -21,7 +9,7 @@ namespace WarehouseManagementUnia
     public partial class AllProductsView : UserControl
     {
         private readonly WarehouseDataAccess _dataAccess;
-        public event Action ProductStatusChanged; // Event to notify main window
+        public event Action ProductStatusChanged;
 
         public AllProductsView()
         {
@@ -51,7 +39,7 @@ namespace WarehouseManagementUnia
             {
                 _dataAccess.SetProductActiveStatus(selectedProduct.Id, !selectedProduct.IsActive);
                 LoadProducts();
-                ProductStatusChanged?.Invoke(); // Notify main window
+                ProductStatusChanged?.Invoke();
             }
         }
 
@@ -63,7 +51,7 @@ namespace WarehouseManagementUnia
                 if (deleted)
                 {
                     LoadProducts();
-                    ProductStatusChanged?.Invoke(); // Notify main window
+                    ProductStatusChanged?.Invoke();
                 }
                 else
                 {
@@ -72,4 +60,4 @@ namespace WarehouseManagementUnia
             }
         }
     }
-}
+}   

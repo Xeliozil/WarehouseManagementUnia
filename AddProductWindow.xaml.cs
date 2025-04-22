@@ -26,21 +26,23 @@ namespace WarehouseManagementUnia
 
         private void Save_Click(object sender, RoutedEventArgs e)
         {
-            if (int.TryParse(QuantityTextBox.Text, out int quantity) && decimal.TryParse(PriceTextBox.Text, out decimal price))
+            if (string.IsNullOrWhiteSpace(NameTextBox.Text) ||
+                !int.TryParse(QuantityTextBox.Text, out int quantity) ||
+                !decimal.TryParse(PriceTextBox.Text, out decimal price))
             {
-                Product = new Product
-                {
-                    Name = NameTextBox.Text,
-                    Quantity = quantity,
-                    Price = price
-                };
-                DialogResult = true;
-                Close();
+                MessageBox.Show("Wprowadź poprawne wartości dla nazwy, ilości i ceny.");
+                return;
             }
-            else
+
+            Product = new Product
             {
-                MessageBox.Show("Wprowadź poprawne wartości dla ilości i ceny.");
-            }
+                Name = NameTextBox.Text,
+                Quantity = quantity,
+                Price = price,
+                IsActive = true
+            };
+            DialogResult = true;
+            Close();
         }
     }
 }

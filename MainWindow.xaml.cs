@@ -11,7 +11,6 @@ using System.Windows.Shapes;
 using System;
 using WarehouseManagementUnia.Data;
 using WarehouseManagementUnia.Models;
-using System;
 
 namespace WarehouseManagementUnia
 {
@@ -30,7 +29,7 @@ namespace WarehouseManagementUnia
             _deliveriesView = new DeliveriesView();
             _allProductsView = new AllProductsView();
             _allProductsView.ProductStatusChanged += RefreshActiveProducts;
-            MainContent.Content = _activeProductsView; // Default view
+            MainContent.Content = _activeProductsView;
         }
 
         private void ShowActiveProducts_Click(object sender, RoutedEventArgs e)
@@ -54,7 +53,7 @@ namespace WarehouseManagementUnia
             if (addDeliveryWindow.ShowDialog() == true)
             {
                 _dataAccess.AddDelivery(addDeliveryWindow.Delivery);
-                _activeProductsView.LoadProducts(); // Refresh active products
+                _activeProductsView.LoadProducts();
             }
         }
 
