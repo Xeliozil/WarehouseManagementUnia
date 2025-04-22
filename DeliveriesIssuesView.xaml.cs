@@ -8,7 +8,7 @@ using WarehouseManagementUnia.Models;
 
 namespace WarehouseManagementUnia
 {
-    public partial class DeliveriesIssuesView : Window
+    public partial class DeliveriesIssuesView : UserControl
     {
         private readonly WarehouseDataAccess _dataAccess;
         public event EventHandler TransactionAdded;
@@ -17,111 +17,29 @@ namespace WarehouseManagementUnia
         {
             InitializeComponent();
             _dataAccess = new WarehouseDataAccess();
-            DeliveryProductComboBox.ItemsSource = _dataAccess.GetProductsForSelection();
-            DeliveryContractorComboBox.ItemsSource = _dataAccess.GetContractors();
-            IssueProductComboBox.ItemsSource = _dataAccess.GetProductsForSelection();
-            IssueContractorComboBox.ItemsSource = _dataAccess.GetContractors();
-            DeliveryDatePicker.SelectedDate = DateTime.Today;
-            IssueDatePicker.SelectedDate = DateTime.Today;
             LoadTransactions();
         }
 
         private void AddDelivery_Click(object sender, RoutedEventArgs e)
         {
-            if (DeliveryProductComboBox.SelectedItem == null)
+            var addDeliveryWindow = new AddDeliveryWindow();
+            addDeliveryWindow.TransactionAdded += (s, args) =>
             {
-                MessageBox.Show("Wybierz produkt.", "Błąd", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
-            }
-
-            if (DeliveryContractorComboBox.SelectedItem == null)
-            {
-                MessageBox.Show("Wybierz kontrahenta.", "Błąd", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
-            }
-
-            if (!int.TryParse(DeliveryQuantityTextBox.Text, out int quantity) || quantity <= 0)
-            {
-                MessageBox.Show("Podaj poprawną ilość (liczba większa od 0).", "Błąd", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
-            }
-
-            if (!DeliveryDatePicker.SelectedDate.HasValue)
-            {
-                MessageBox.Show("Wybierz datę dostawy.", "Błąd", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
-            }
-
-            try
-            {
-                var delivery = new Delivery
-                {
-                    ProductId = ((Product)DeliveryProductComboBox.SelectedItem).Id,
-                    ContractorId = ((Contractor)DeliveryContractorComboBox.SelectedItem).Id,
-                    Quantity = quantity,
-                    DeliveryDate = DeliveryDatePicker.SelectedDate.Value,
-                    Description = DeliveryDescriptionTextBox.Text
-                };
-
-                _dataAccess.AddDelivery(delivery);
-                MessageBox.Show("Dostawa dodana pomyślnie.", "Sukces", MessageBoxButton.OK, MessageBoxImage.Information);
-                ClearDeliveryFields();
                 LoadTransactions();
                 TransactionAdded?.Invoke(this, EventArgs.Empty);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Błąd podczas dodawania dostawy: {ex.Message}", "Błąd", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            };
+            addDeliveryWindow.ShowDialog();
         }
 
         private void AddIssue_Click(object sender, RoutedEventArgs e)
         {
-            if (IssueProductComboBox.SelectedItem == null)
+            var addIssueWindow = new AddIssueWindow();
+            addIssueWindow.TransactionAdded += (s, args) =>
             {
-                MessageBox.Show("Wybierz produkt.", "Błąd", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
-            }
-
-            if (IssueContractorComboBox.SelectedItem == null)
-            {
-                MessageBox.Show("Wybierz kontrahenta.", "Błąd", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
-            }
-
-            if (!int.TryParse(IssueQuantityTextBox.Text, out int quantity) || quantity <= 0)
-            {
-                MessageBox.Show("Podaj poprawną ilość (liczba większa od 0).", "Błąd", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
-            }
-
-            if (!IssueDatePicker.SelectedDate.HasValue)
-            {
-                MessageBox.Show("Wybierz datę wydania.", "Błąd", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
-            }
-
-            try
-            {
-                var issue = new Issue
-                {
-                    ProductId = ((Product)IssueProductComboBox.SelectedItem).Id,
-                    ContractorId = ((Contractor)IssueContractorComboBox.SelectedItem).Id,
-                    Quantity = quantity,
-                    IssueDate = IssueDatePicker.SelectedDate.Value,
-                    Description = IssueDescriptionTextBox.Text
-                };
-
-                _dataAccess.AddIssue(issue);
-                MessageBox.Show("Wydanie dodane pomyślnie.", "Sukces", MessageBoxButton.OK, MessageBoxImage.Information);
-                ClearIssueFields();
                 LoadTransactions();
                 TransactionAdded?.Invoke(this, EventArgs.Empty);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Błąd podczas dodawania wydania: {ex.Message}", "Błąd", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            };
+            addIssueWindow.ShowDialog();
         }
 
         public void LoadTransactions()
@@ -157,22 +75,12 @@ namespace WarehouseManagementUnia
             TransactionsDataGrid.ItemsSource = transactions.OrderBy(t => t.Date).ToList();
         }
 
-        private void ClearDeliveryFields()
+        private void Back_Click(object sender, RoutedEventArgs e)
         {
-            DeliveryProductComboBox.SelectedIndex = -1;
-            DeliveryContractorComboBox.SelectedIndex = -1;
-            DeliveryQuantityTextBox.Text = "";
-            DeliveryDatePicker.SelectedDate = DateTime.Today;
-            DeliveryDescriptionTextBox.Text = "";
-        }
-
-        private void ClearIssueFields()
-        {
-            IssueProductComboBox.SelectedIndex = -1;
-            IssueContractorComboBox.SelectedIndex = -1;
-            IssueQuantityTextBox.Text = "";
-            IssueDatePicker.SelectedDate = DateTime.Today;
-            IssueDescriptionTextBox.Text = "";
+            if (Window.GetWindow(this) is MainWindow mainWindow)
+            {
+                mainWindow.ShowMainMenu();
+            }
         }
     }
 }

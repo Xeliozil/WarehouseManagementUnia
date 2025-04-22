@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Windows;
+using System.Windows.Controls;
 using WarehouseManagementUnia.Data;
 
 namespace WarehouseManagementUnia
@@ -12,39 +13,65 @@ namespace WarehouseManagementUnia
         {
             InitializeComponent();
             _dataAccess = new WarehouseDataAccess();
+            ShowMainMenu();
         }
 
-        private void ShowStock_Click(object sender, RoutedEventArgs e)
+        public void ShowMainMenu()
         {
-            var stockView = new StockView();
-            stockView.ShowDialog();
+            var menu = new StackPanel
+            {
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            var stockButton = new Button
+            {
+                Content = "Stany magazynowe",
+                Width = 150,
+                Margin = new Thickness(0, 10, 0, 10)
+            };
+            stockButton.Click += (s, e) => MainContent.Content = new StockView();
+
+            var deliveriesIssuesButton = new Button
+            {
+                Content = "Dostawy i wydania",
+                Width = 150,
+                Margin = new Thickness(0, 10, 0, 10)
+            };
+            deliveriesIssuesButton.Click += (s, e) =>
+            {
+                var deliveriesIssuesView = new DeliveriesIssuesView();
+                deliveriesIssuesView.TransactionAdded += RefreshDeliveriesIssuesView;
+                MainContent.Content = deliveriesIssuesView;
+            };
+
+            var contractorsButton = new Button
+            {
+                Content = "Kontrahenci",
+                Width = 150,
+                Margin = new Thickness(0, 10, 0, 10)
+            };
+            contractorsButton.Click += (s, e) => MainContent.Content = new ContractorsView();
+
+            var reportsButton = new Button
+            {
+                Content = "Raporty",
+                Width = 150,
+                Margin = new Thickness(0, 10, 0, 10)
+            };
+            reportsButton.Click += (s, e) => MainContent.Content = new ReportsView();
+
+            menu.Children.Add(stockButton);
+            menu.Children.Add(deliveriesIssuesButton);
+            menu.Children.Add(contractorsButton);
+            menu.Children.Add(reportsButton);
+
+            MainContent.Content = menu;
         }
 
-        private void ShowDeliveriesIssues_Click(object sender, RoutedEventArgs e)
+        private void RefreshDeliveriesIssuesView(object sender, EventArgs e)
         {
-            var deliveriesIssuesView = new DeliveriesIssuesView();
-            deliveriesIssuesView.TransactionAdded += RefreshAllViews;
-            deliveriesIssuesView.ShowDialog();
-        }
-
-        private void ShowContractors_Click(object sender, RoutedEventArgs e)
-        {
-            var contractorsWindow = new ContractorsWindow();
-            contractorsWindow.ShowDialog();
-        }
-
-        private void ShowReports_Click(object sender, RoutedEventArgs e)
-        {
-            var reportWindow = new ReportWindow();
-            reportWindow.ShowDialog();
-        }
-
-        private void RefreshAllViews(object sender, EventArgs e)
-        {
-            // Odśwież dane w MainWindow, jeśli istnieją (np. DataGrid dla produktów)
-            // LoadMainWindowData();
-            // Odśwież otwarte okno DeliveriesIssuesView, jeśli istnieje
-            if (Application.Current.Windows.OfType<DeliveriesIssuesView>().FirstOrDefault() is DeliveriesIssuesView deliveriesIssuesView)
+            if (MainContent.Content is DeliveriesIssuesView deliveriesIssuesView)
             {
                 deliveriesIssuesView.LoadTransactions();
             }

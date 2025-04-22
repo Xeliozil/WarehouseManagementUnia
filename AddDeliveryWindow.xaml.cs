@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Windows;
 using WarehouseManagementUnia.Data;
-using WarehouseManagementUnia.Models; // Dodano
+using WarehouseManagementUnia.Models;
 
 namespace WarehouseManagementUnia
 {
     public partial class AddDeliveryWindow : Window
     {
         private readonly WarehouseDataAccess _dataAccess;
+        public event EventHandler TransactionAdded;
 
         public AddDeliveryWindow()
         {
@@ -34,7 +35,7 @@ namespace WarehouseManagementUnia
 
             if (!int.TryParse(QuantityTextBox.Text, out int quantity) || quantity <= 0)
             {
-                MessageBox.Show("Podaj poprawną ilość.", "Błąd", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("Podaj poprawną ilość (liczba większa od 0).", "Błąd", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
@@ -57,6 +58,7 @@ namespace WarehouseManagementUnia
 
                 _dataAccess.AddDelivery(delivery);
                 MessageBox.Show("Dostawa dodana pomyślnie.", "Sukces", MessageBoxButton.OK, MessageBoxImage.Information);
+                TransactionAdded?.Invoke(this, EventArgs.Empty);
                 Close();
             }
             catch (Exception ex)
