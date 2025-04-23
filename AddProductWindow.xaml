@@ -1,20 +1,16 @@
 ﻿<Window x:Class="WarehouseManagementUnia.AddProductWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:WarehouseManagementUnia"
-        mc:Ignorable="d"
-        Title="AddProductWindow" Height="450" Width="800">
+        Title="Dodaj produkt" Height="200" Width="300">
     <Grid Margin="10">
-        <StackPanel>
-            <Label Content="Nazwa"/>
-            <TextBox x:Name="NameTextBox" Width="200"/>
-            <Label Content="Ilość"/>
-            <TextBox x:Name="QuantityTextBox" Width="200"/>
-            <Label Content="Cena"/>
-            <TextBox x:Name="PriceTextBox" Width="200"/>
-            <Button Content="Zapisz" Width="100" Margin="0,10,0,0" Click="Save_Click"/>
-        </StackPanel>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Label Grid.Row="0" Content="Nazwa:"/>
+        <TextBox Grid.Row="1" x:Name="NameTextBox" Width="200" HorizontalAlignment="Left"/>
+        <Button Grid.Row="3" Content="Dodaj" Width="100" Height="30" HorizontalAlignment="Right" Margin="0,10,0,0" Click="AddProduct_Click"/>
     </Grid>
 </Window>

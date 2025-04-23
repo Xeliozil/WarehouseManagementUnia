@@ -1,0 +1,26 @@
+﻿<Window x:Class="WarehouseManagementUnia.DeleteProductWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Usuń produkt" Height="300" Width="400">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Label Grid.Row="0" Content="Wybierz produkt:"/>
+        <ComboBox Grid.Row="1" x:Name="ProductComboBox" Width="300" HorizontalAlignment="Left" MaxHeight="100" ScrollViewer.VerticalScrollBarVisibility="Auto"/>
+        <Label Grid.Row="2" Content="Czy usunąć historię (dostawy, wydania)?" Margin="0,10,0,0"/>
+        <StackPanel Grid.Row="3" Orientation="Horizontal">
+            <Button Content="Tak" Width="100" Height="30" Margin="0,0,10,0" Click="DeleteWithHistory_Click"/>
+            <Button Content="Nie" Width="100" Height="30" Click="CancelDelete_Click"/>
+        </StackPanel>
+        <Label Grid.Row="4" x:Name="ConfirmationLabel" Content="Wpisz nazwę produktu do potwierdzenia:" Visibility="Collapsed" Margin="0,10,0,0"/>
+        <TextBox Grid.Row="5" x:Name="ConfirmationTextBox" Width="300" HorizontalAlignment="Left" Visibility="Collapsed"/>
+        <Button Grid.Row="6" x:Name="ConfirmDeleteButton" Content="Potwierdź usunięcie" Width="150" Height="30" HorizontalAlignment="Right" Margin="0,10,0,0" Visibility="Collapsed" Click="ConfirmDelete_Click"/>
+    </Grid>
+</Window>
