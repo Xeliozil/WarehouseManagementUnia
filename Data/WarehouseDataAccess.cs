@@ -384,7 +384,51 @@ namespace WarehouseManagementUnia.Data
             }
             return lineCount * font.Height;
         }
+        public int GetNextProductId()
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                connection.Open();
+                var command = new SqlCommand("SELECT ISNULL(MAX(Id), 0) + 1 FROM Products", connection);
+                return (int)command.ExecuteScalar();
+            }
+        }
 
+
+        public void DeleteProductWithHistory(int productId)
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                connection.Open();
+                using (var transaction = connection.BeginTransaction())
+                {
+                    try
+                    {
+                        // Usuń dostawy
+                        var deleteDeliveries = new SqlCommand("DELETE FROM Deliveries WHERE ProductId = @ProductId", connection, transaction);
+                        deleteDeliveries.Parameters.AddWithValue("@ProductId", productId);
+                        deleteDeliveries.ExecuteNonQuery();
+
+                        // Usuń wydania
+                        var deleteIssues = new SqlCommand("DELETE FROM Issues WHERE ProductId = @ProductId", connection, transaction);
+                        deleteIssues.Parameters.AddWithValue("@ProductId", productId);
+                        deleteIssues.ExecuteNonQuery();
+
+                        // Usuń produkt
+                        var deleteProduct = new SqlCommand("DELETE FROM Products WHERE Id = @Id", connection, transaction);
+                        deleteProduct.Parameters.AddWithValue("@Id", productId);
+                        deleteProduct.ExecuteNonQuery();
+
+                        transaction.Commit();
+                    }
+                    catch
+                    {
+                        transaction.Rollback();
+                        throw;
+                    }
+                }
+            }
+        }
         public void GenerateReport(string title, DateTime startDate, DateTime endDate, string filePath, string format, int? contractorId = null, int? productId = null, string transactionType = null)
         {
             var transactions = new List<Transaction>();

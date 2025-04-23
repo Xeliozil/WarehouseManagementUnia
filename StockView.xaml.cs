@@ -20,6 +20,14 @@ namespace WarehouseManagementUnia
             ProductsDataGrid.ItemsSource = _dataAccess.GetProducts();
         }
 
+        private void AllProducts_Click(object sender, RoutedEventArgs e)
+        {
+            if (Window.GetWindow(this) is MainWindow mainWindow)
+            {
+                mainWindow.MainContent.Content = new AllProductsView();
+            }
+        }
+
         private void Back_Click(object sender, RoutedEventArgs e)
         {
             if (Window.GetWindow(this) is MainWindow mainWindow)

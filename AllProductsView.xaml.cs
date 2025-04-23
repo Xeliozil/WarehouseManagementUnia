@@ -1,15 +1,12 @@
-﻿using System;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using WarehouseManagementUnia.Data;
-using WarehouseManagementUnia.Models;
 
 namespace WarehouseManagementUnia
 {
     public partial class AllProductsView : UserControl
     {
         private readonly WarehouseDataAccess _dataAccess;
-        public event Action ProductStatusChanged;
 
         public AllProductsView()
         {
@@ -18,45 +15,30 @@ namespace WarehouseManagementUnia
             LoadProducts();
         }
 
-        public void LoadProducts()
+        private void LoadProducts()
         {
-            ProductsGrid.ItemsSource = _dataAccess.GetAllProducts();
+            AllProductsDataGrid.ItemsSource = _dataAccess.GetAllProducts();
         }
 
         private void AddProduct_Click(object sender, RoutedEventArgs e)
         {
-            var addWindow = new AddProductWindow();
-            if (addWindow.ShowDialog() == true)
-            {
-                _dataAccess.AddProduct(addWindow.Product);
-                LoadProducts();
-                ProductStatusChanged?.Invoke();
-            }
+            var addProductWindow = new AddProductWindow();
+            addProductWindow.ProductAdded += (s, args) => LoadProducts();
+            addProductWindow.ShowDialog();
         }
 
         private void DeleteProduct_Click(object sender, RoutedEventArgs e)
         {
-            if (ProductsGrid.SelectedItem is Product selectedProduct)
-            {
-                var result = MessageBox.Show(
-                    "Czy chcesz usunąć historię dostaw związanych z tym przedmiotem?",
-                    "Potwierdzenie usunięcia",
-                    MessageBoxButton.YesNoCancel,
-                    MessageBoxImage.Question);
+            var deleteProductWindow = new DeleteProductWindow();
+            deleteProductWindow.ProductDeleted += (s, args) => LoadProducts();
+            deleteProductWindow.ShowDialog();
+        }
 
-                if (result == MessageBoxResult.Yes)
-                {
-                    _dataAccess.HardDeleteProduct(selectedProduct.Id);
-                    LoadProducts();
-                    ProductStatusChanged?.Invoke();
-                }
-                else if (result == MessageBoxResult.No)
-                {
-                    _dataAccess.SoftDeleteProduct(selectedProduct.Id);
-                    LoadProducts();
-                    ProductStatusChanged?.Invoke();
-                }
-                // Cancel nic nie robi
+        private void Back_Click(object sender, RoutedEventArgs e)
+        {
+            if (Window.GetWindow(this) is MainWindow mainWindow)
+            {
+                mainWindow.ShowMainMenu();
             }
         }
     }
