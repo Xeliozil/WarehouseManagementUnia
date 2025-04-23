@@ -7,11 +7,13 @@ namespace WarehouseManagementUnia
     public partial class StockView : UserControl
     {
         private readonly WarehouseDataAccess _dataAccess;
+        private readonly string _userRole;
 
-        public StockView()
+        public StockView(string userRole)
         {
             InitializeComponent();
             _dataAccess = new WarehouseDataAccess();
+            _userRole = userRole;
             LoadProducts();
         }
 
@@ -24,7 +26,7 @@ namespace WarehouseManagementUnia
         {
             if (Window.GetWindow(this) is MainWindow mainWindow)
             {
-                mainWindow.MainContent.Content = new AllProductsView();
+                mainWindow.MainContent.Content = new AllProductsView(_userRole);
             }
         }
 

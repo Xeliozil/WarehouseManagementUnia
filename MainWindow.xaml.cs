@@ -1,18 +1,20 @@
-﻿using System;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
-using WarehouseManagementUnia.Data;
 
 namespace WarehouseManagementUnia
 {
     public partial class MainWindow : Window
     {
-        private readonly WarehouseDataAccess _dataAccess;
+        private string _userRole;
 
         public MainWindow()
         {
             InitializeComponent();
-            _dataAccess = new WarehouseDataAccess();
+        }
+
+        public void InitializeWithRole(string userRole)
+        {
+            _userRole = userRole;
             ShowMainMenu();
         }
 
@@ -30,7 +32,7 @@ namespace WarehouseManagementUnia
                 Width = 150,
                 Margin = new Thickness(0, 10, 0, 10)
             };
-            stockButton.Click += (s, e) => MainContent.Content = new StockView();
+            stockButton.Click += (s, e) => MainContent.Content = new StockView(_userRole);
 
             var deliveriesIssuesButton = new Button
             {
@@ -38,12 +40,7 @@ namespace WarehouseManagementUnia
                 Width = 150,
                 Margin = new Thickness(0, 10, 0, 10)
             };
-            deliveriesIssuesButton.Click += (s, e) =>
-            {
-                var deliveriesIssuesView = new DeliveriesIssuesView();
-                deliveriesIssuesView.TransactionAdded += RefreshDeliveriesIssuesView;
-                MainContent.Content = deliveriesIssuesView;
-            };
+            deliveriesIssuesButton.Click += (s, e) => MainContent.Content = new DeliveriesIssuesView();
 
             var contractorsButton = new Button
             {
@@ -67,14 +64,6 @@ namespace WarehouseManagementUnia
             menu.Children.Add(reportsButton);
 
             MainContent.Content = menu;
-        }
-
-        private void RefreshDeliveriesIssuesView(object sender, EventArgs e)
-        {
-            if (MainContent.Content is DeliveriesIssuesView deliveriesIssuesView)
-            {
-                deliveriesIssuesView.LoadTransactions();
-            }
         }
     }
 }

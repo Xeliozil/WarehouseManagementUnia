@@ -7,17 +7,29 @@ namespace WarehouseManagementUnia
     public partial class AllProductsView : UserControl
     {
         private readonly WarehouseDataAccess _dataAccess;
+        private readonly string _userRole;
 
-        public AllProductsView()
+        public AllProductsView(string userRole)
         {
             InitializeComponent();
             _dataAccess = new WarehouseDataAccess();
+            _userRole = userRole;
             LoadProducts();
+            ConfigurePermissions();
         }
 
         private void LoadProducts()
         {
             AllProductsDataGrid.ItemsSource = _dataAccess.GetAllProducts();
+        }
+
+        private void ConfigurePermissions()
+        {
+            if (_userRole != "Admin")
+            {
+                DeleteButton.IsEnabled = false;
+                DeleteButton.ToolTip = "Za małe uprawnienia, skontaktuj się z administratorem";
+            }
         }
 
         private void AddProduct_Click(object sender, RoutedEventArgs e)
