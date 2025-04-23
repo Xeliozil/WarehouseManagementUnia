@@ -1,5 +1,6 @@
 ﻿<UserControl x:Class="WarehouseManagementUnia.ContractorsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:local="clr-namespace:WarehouseManagementUnia"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Grid Margin="10">
         <Grid.RowDefinitions>
@@ -11,6 +12,12 @@
         <TextBlock Grid.Row="0" Text="Kontrahenci" FontSize="20" HorizontalAlignment="Center" Margin="0,10,0,10"/>
         <GroupBox Grid.Row="1" Header="Kontrahenci">
             <DataGrid x:Name="ContractorsDataGrid" AutoGenerateColumns="False" IsReadOnly="True" Margin="5">
+                <DataGrid.Resources>
+                    <Style TargetType="DataGridCell">
+                        <Setter Property="Foreground" Value="{Binding FontColorBrush, Source={x:Static local:SettingsHelper.Instance}}" />
+                        <Setter Property="FontSize" Value="{Binding FontSize, Source={x:Static local:SettingsHelper.Instance}}" />
+                    </Style>
+                </DataGrid.Resources>
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="50"/>
                     <DataGridTextColumn Header="Nazwa" Binding="{Binding Name}" Width="150"/>
@@ -19,6 +26,6 @@
                 </DataGrid.Columns>
             </DataGrid>
         </GroupBox>
-        <Button Grid.Row="2" Content="Dodaj kontrahenta" Width="100" Margin="0,10,0,0" Click="AddContractor_Click"/>
+        <Button Grid.Row="2" Content="Dodaj kontrahenta" Width="150" Margin="0,10,0,0" Click="AddContractor_Click"/>
     </Grid>
 </UserControl>

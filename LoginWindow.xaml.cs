@@ -8,6 +8,13 @@ namespace WarehouseManagementUnia
         public LoginWindow()
         {
             InitializeComponent();
+            this.Closed += (s, e) =>
+            {
+                if (Application.Current.MainWindow == this || Application.Current.MainWindow == null)
+                {
+                    Application.Current.Shutdown();
+                }
+            };
         }
 
         private void Login_Click(object sender, RoutedEventArgs e)

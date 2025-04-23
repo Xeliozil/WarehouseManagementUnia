@@ -8,7 +8,7 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
-            <Button Content="Dodaj kontrahenta" Width="150" Margin="0,0,10,0" Click="AddContractor_Click"/>
+            <Button Content="Dodaj kontrahenta" Width="200" Margin="0,0,10,0" Click="AddContractor_Click"/>
             <Button Content="Usuń kontrahenta" Width="150" Click="DeleteContractor_Click"/>
         </StackPanel>
         <DataGrid x:Name="ContractorsDataGrid" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single">

@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using WarehouseManagementUnia.Data;
 
 namespace WarehouseManagementUnia
@@ -14,13 +15,20 @@ namespace WarehouseManagementUnia
             InitializeComponent();
             _dataAccess = new WarehouseDataAccess();
             _userRole = userRole;
-            LoadProducts();
-            ConfigurePermissions();
+            DataContext = SettingsHelper.Instance;
+            Loaded += (s, e) =>
+            {
+                LoadProducts();
+                ConfigurePermissions();
+                ApplySettings();
+            };
         }
 
         private void LoadProducts()
         {
-            AllProductsDataGrid.ItemsSource = _dataAccess.GetAllProducts();
+            var items = _dataAccess.GetAllProducts();
+            AllProductsDataGrid.ItemsSource = null; // Wyczyść, aby wymusić odświeżenie
+            AllProductsDataGrid.ItemsSource = items;
         }
 
         private void ConfigurePermissions()
@@ -29,6 +37,35 @@ namespace WarehouseManagementUnia
             {
                 DeleteButton.IsEnabled = false;
                 DeleteButton.ToolTip = "Za małe uprawnienia, skontaktuj się z administratorem";
+            }
+        }
+
+        public void ApplySettings()
+        {
+            if (Window.GetWindow(this) is MainWindow mainWindow)
+            {
+                string username = mainWindow.GetUsername();
+                string fontColor = Properties.Settings.Default[$"FontColor_{username}"].ToString() ?? "Black";
+                double fontSize = Properties.Settings.Default[$"FontSize_{username}"] != null ? (double)Properties.Settings.Default[$"FontSize_{username}"] : 14;
+
+                ApplySettingsToElement(this, fontColor, fontSize);
+            }
+        }
+
+        private void ApplySettingsToElement(DependencyObject element, string fontColor, double fontSize)
+        {
+            if (element == null) return;
+
+            if (element is FrameworkElement fe && !(fe is DataGridCell))
+            {
+                fe.SetValue(Control.ForegroundProperty, new SolidColorBrush((Color)ColorConverter.ConvertFromString(fontColor)));
+                fe.SetValue(Control.FontSizeProperty, fontSize);
+            }
+
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(element); i++)
+            {
+                var child = VisualTreeHelper.GetChild(element, i);
+                ApplySettingsToElement(child, fontColor, fontSize);
             }
         }
 
