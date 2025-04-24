@@ -16,11 +16,11 @@ using System.Windows.Shapes;
 namespace WarehouseManagementUnia.Views
 {
     /// <summary>
-    /// Logika interakcji dla klasy InventoryView.xaml
+    /// Logika interakcji dla klasy DocumentsView.xaml
     /// </summary>
-    public partial class InventoryView : UserControl
+    public partial class DocumentsView : UserControl
     {
-        public InventoryView()
+        public DocumentsView()
         {
             InitializeComponent();
         }

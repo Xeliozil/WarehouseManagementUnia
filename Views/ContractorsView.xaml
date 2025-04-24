@@ -1,0 +1,19 @@
+﻿<UserControl x:Class="WarehouseManagementUnia.Views.ContractorsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <DataGrid ItemsSource="{Binding Contractors}" AutoGenerateColumns="False" Margin="5">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Name" Binding="{Binding Name}"/>
+                <DataGridTextColumn Header="Address" Binding="{Binding Address}"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <Button Grid.Row="1" Content="Add Contractor" Command="{Binding AddContractorCommand}" HorizontalAlignment="Right" Margin="5"/>
+    </Grid>
+</UserControl>

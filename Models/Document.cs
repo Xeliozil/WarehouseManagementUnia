@@ -1,16 +1,19 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace WarehouseManagementUnia.Data
+namespace WarehouseManagementUnia.Models
 {
-    public enum DocumentType { Dostawa, MM, Wydanie }
-
     public class Document
     {
-        public int Id { get; set; }
-        public DocumentType Type { get; set; }
+        public int DocumentId { get; set; }
+        public string DocumentType { get; set; }
+        public string ProductName { get; set; }
+        public string WarehouseCode { get; set; }
         public string ContractorName { get; set; }
-        public int FromWarehouseId { get; set; }
-        public int? ToWarehouseId { get; set; }
-        public List<Product> Products { get; set; } = new();
+        public int Quantity { get; set; }
+        public DateTime DocumentDate { get; set; }
     }
 }

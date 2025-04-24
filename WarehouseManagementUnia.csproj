@@ -21,4 +21,9 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="DataAccess\" />
+    <Folder Include="Services\" />
+  </ItemGroup>
+
 </Project>

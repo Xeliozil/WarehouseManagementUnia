@@ -10,16 +10,17 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace WarehouseManagementUnia.Views.Windows
+namespace WarehouseManagementUnia.Views
 {
     /// <summary>
-    /// Logika interakcji dla klasy AddContractorWindow.xaml
+    /// Logika interakcji dla klasy EmptyView.xaml
     /// </summary>
-    public partial class AddContractorWindow : Window
+    public partial class EmptyView : UserControl
     {
-        public AddContractorWindow()
+        public EmptyView()
         {
             InitializeComponent();
         }

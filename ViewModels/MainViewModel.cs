@@ -1,15 +1,14 @@
-﻿using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using System.Windows.Input;
-using WarehouseManagementUnia.Utilities;
+﻿using System.Windows.Input;
 using WarehouseManagementUnia.Views;
+
 
 namespace WarehouseManagementUnia.ViewModels
 {
-    public class MainViewModel : INotifyPropertyChanged
+    public class MainViewModel : ViewModelBase
     {
         private object _currentView;
         private string _currentViewTitle;
+        private readonly string _userRole;
 
         public object CurrentView
         {
@@ -23,48 +22,36 @@ namespace WarehouseManagementUnia.ViewModels
             set { _currentViewTitle = value; OnPropertyChanged(); }
         }
 
-        public ICommand ShowInventoryViewCommand { get; }
-        public ICommand ShowContractorsViewCommand { get; }
-        public ICommand ShowDocumentsViewCommand { get; }
-        public ICommand ShowEmptyViewCommand { get; }
+        public ICommand NavigateCommand { get; }
 
-        public MainViewModel()
+        public MainViewModel(string userRole)
         {
-            ShowInventoryViewCommand = new RelayCommand(o => ShowInventoryView());
-            ShowContractorsViewCommand = new RelayCommand(o => ShowContractorsView());
-            ShowDocumentsViewCommand = new RelayCommand(o => ShowDocumentsView());
-            ShowEmptyViewCommand = new RelayCommand(o => ShowEmptyView());
-
-            // Domyślny widok
-            ShowInventoryView();
+            _userRole = userRole;
+            NavigateCommand = new RelayCommand<string>(Navigate);
+            Navigate("Stock"); // Default view
         }
 
-        private void ShowInventoryView()
+        private void Navigate(string viewName)
         {
-            CurrentView = new InventoryView();
-            CurrentViewTitle = "Stan Magazynowy";
+            switch (viewName)
+            {
+                case "Stock":
+                    CurrentView = new StockView { DataContext = new StockViewModel(_userRole) };
+                    CurrentViewTitle = "Stock Status";
+                    break;
+                case "Contractors":
+                    CurrentView = new ContractorsView { DataContext = new ContractorsViewModel(_userRole) };
+                    CurrentViewTitle = "Contractors";
+                    break;
+                case "Documents":
+                    CurrentView = new DocumentsView { DataContext = new DocumentsViewModel(_userRole) };
+                    CurrentViewTitle = "Documents";
+                    break;
+                case "Empty":
+                    CurrentView = new EmptyView();
+                    CurrentViewTitle = "Empty View";
+                    break;
+            }
         }
-
-        private void ShowContractorsView()
-        {
-            CurrentView = new ContractorsView();
-            CurrentViewTitle = "Kontrahenci";
-        }
-
-        private void ShowDocumentsView()
-        {
-            CurrentView = new DocumentsView();
-            CurrentViewTitle = "Dokumenty";
-        }
-
-        private void ShowEmptyView()
-        {
-            CurrentView = new EmptyView();
-            CurrentViewTitle = "Pusty Widok";
-        }
-
-        public event PropertyChangedEventHandler PropertyChanged;
-        protected void OnPropertyChanged([CallerMemberName] string name = null) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
 }

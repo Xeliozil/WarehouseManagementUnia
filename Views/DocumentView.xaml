@@ -1,0 +1,23 @@
+﻿<Window x:Class="WarehouseManagementUnia.Views.DocumentView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Generate Document" Height="400" Width="500">
+    <Grid>
+        <StackPanel Margin="10">
+            <TextBlock Text="Document Type:"/>
+            <ComboBox ItemsSource="{Binding DocumentTypes}" SelectedItem="{Binding SelectedDocumentType}" DisplayMemberPath="TypeName" Margin="5"/>
+            <TextBlock Text="Product:"/>
+            <ComboBox ItemsSource="{Binding Products}" SelectedItem="{Binding SelectedProduct}" DisplayMemberPath="Name" Margin="5"/>
+            <TextBlock Text="Contractor (Optional):"/>
+            <ComboBox ItemsSource="{Binding Contractors}" SelectedItem="{Binding SelectedContractor}" DisplayMemberPath="Name" Margin="5"/>
+            <TextBlock Text="Quantity:"/>
+            <TextBox Text="{Binding Quantity}" Margin="5"/>
+            <TextBlock Text="Target Warehouse (for Transfer):"/>
+            <ComboBox ItemsSource="{Binding Warehouses}" SelectedItem="{Binding TargetWarehouse}" DisplayMemberPath="WarehouseCode" Margin="5"/>
+            <CheckBox Content="Include Name" IsChecked="{Binding IncludeName}" Margin="5"/>
+            <CheckBox Content="Include Quantity" IsChecked="{Binding IncludeQuantity}" Margin="5"/>
+            <Button Content="Generate PDF" Command="{Binding GeneratePdfCommand}" Margin="5"/>
+            <Button Content="Generate CSV" Command="{Binding GenerateCsvCommand}" Margin="5"/>
+        </StackPanel>
+    </Grid>
+</Window>

@@ -1,0 +1,30 @@
+﻿<UserControl x:Class="WarehouseManagementUnia.Views.DocumentsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Filter Bar -->
+        <StackPanel Orientation="Horizontal" Margin="5">
+            <ComboBox ItemsSource="{Binding Contractors}" SelectedItem="{Binding SelectedContractor}" DisplayMemberPath="Name" Width="150" Margin="5"/>
+            <ComboBox ItemsSource="{Binding Warehouses}" SelectedItem="{Binding SelectedWarehouse}" DisplayMemberPath="WarehouseCode" Width="150" Margin="5"/>
+            <ComboBox ItemsSource="{Binding DocumentTypes}" SelectedItem="{Binding SelectedDocumentType}" DisplayMemberPath="TypeName" Width="150" Margin="5"/>
+            <Button Content="Filter" Command="{Binding FilterCommand}" Margin="5"/>
+        </StackPanel>
+
+        <!-- Data Grid -->
+        <DataGrid ItemsSource="{Binding Documents}" AutoGenerateColumns="False" Grid.Row="1" Margin="5">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Document Type" Binding="{Binding DocumentType}"/>
+                <DataGridTextColumn Header="Product" Binding="{Binding ProductName}"/>
+                <DataGridTextColumn Header="Warehouse" Binding="{Binding WarehouseCode}"/>
+                <DataGridTextColumn Header="Contractor" Binding="{Binding ContractorName}"/>
+                <DataGridTextColumn Header="Quantity" Binding="{Binding Quantity}"/>
+                <DataGridTextColumn Header="Date" Binding="{Binding DocumentDate, StringFormat={}{0:yyyy-MM-dd}}"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</UserControl>

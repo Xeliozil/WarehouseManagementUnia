@@ -10,16 +10,17 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace WarehouseManagementUnia.Views.Windows
+namespace WarehouseManagementUnia.Views
 {
     /// <summary>
-    /// Logika interakcji dla klasy DocumentWindow.xaml
+    /// Logika interakcji dla klasy StockView.xaml
     /// </summary>
-    public partial class DocumentWindow : Window
+    public partial class StockView : UserControl
     {
-        public DocumentWindow()
+        public StockView()
         {
             InitializeComponent();
         }

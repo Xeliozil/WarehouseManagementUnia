@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace WarehouseManagementUnia.Models
 {
-    public class Warehouse
+    public class DocumentType
     {
-        public int WarehouseId { get; set; }
-        public string WarehouseCode { get; set; }
+        public int DocumentTypeId { get; set; }
+        public string TypeName { get; set; }
     }
 }

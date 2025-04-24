@@ -1,0 +1,14 @@
+﻿<Window x:Class="WarehouseManagementUnia.Views.AddProductView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Add Product" Height="300" Width="400">
+    <Grid>
+        <StackPanel Margin="10">
+            <TextBlock Text="Product Name:"/>
+            <TextBox Text="{Binding ProductName}" Margin="5"/>
+            <TextBlock Text="Quantity:"/>
+            <TextBox Text="{Binding Quantity}" Margin="5"/>
+            <Button Content="Add" Command="{Binding AddCommand}" Margin="5"/>
+        </StackPanel>
+    </Grid>
+</Window>
