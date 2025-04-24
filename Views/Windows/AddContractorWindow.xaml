@@ -1,0 +1,12 @@
+﻿<Window x:Class="WarehouseManagementUnia.Views.Windows.AddContractorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Dodaj Kontrahenta" Height="250" Width="400">
+    <Grid Margin="10">
+        <StackPanel>
+            <TextBox x:Name="NameTextBox" Margin="0,0,0,10" PlaceholderText="Nazwa kontrahenta"/>
+            <TextBox x:Name="AddressTextBox" Margin="0,0,0,10" PlaceholderText="Adres"/>
+            <Button Content="Dodaj" Click="AddContractor_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

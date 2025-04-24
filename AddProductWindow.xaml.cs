@@ -1,47 +1,37 @@
-﻿using System;
+﻿// AddProductWindow.xaml.cs
 using System.Windows;
-using WarehouseManagementUnia.Data;
 using WarehouseManagementUnia.Models;
 
-namespace WarehouseManagementUnia
+namespace WarehouseManagementUnia.Views
 {
     public partial class AddProductWindow : Window
     {
-        private readonly WarehouseDataAccess _dataAccess;
-        public event EventHandler ProductAdded;
-
-        public AddProductWindow()
+        private int warehouseId;
+        public AddProductWindow(int warehouseId)
         {
             InitializeComponent();
-            _dataAccess = new WarehouseDataAccess();
+            this.warehouseId = warehouseId;
         }
 
-        private void AddProduct_Click(object sender, RoutedEventArgs e)
+        private void Add_Click(object sender, RoutedEventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(NameTextBox.Text))
+            string name = NameBox.Text;
+            string category = CategoryBox.Text;
+            if (int.TryParse(QuantityBox.Text, out int quantity))
             {
-                MessageBox.Show("Podaj nazwę produktu.", "Błąd", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
-            }
-
-            try
-            {
-                var product = new Product
+                // Tutaj dodanie do bazy danych
+                DatabaseService.AddProduct(new Product
                 {
-                    Id = _dataAccess.GetNextProductId(),
-                    Name = NameTextBox.Text,
-                    Price = 0,
-                    Quantity = 0
-                };
-
-                _dataAccess.AddProduct(product);
-                MessageBox.Show("Produkt dodany pomyślnie.", "Sukces", MessageBoxButton.OK, MessageBoxImage.Information);
-                ProductAdded?.Invoke(this, EventArgs.Empty);
-                Close();
+                    Name = name,
+                    Category = category,
+                    Quantity = quantity,
+                    WarehouseId = warehouseId
+                });
+                this.Close();
             }
-            catch (Exception ex)
+            else
             {
-                MessageBox.Show($"Błąd podczas dodawania produktu: {ex.Message}", "Błąd", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("Niepoprawna ilość.");
             }
         }
     }

@@ -12,14 +12,14 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
-namespace WarehouseManagementUnia
+namespace WarehouseManagementUnia.Views.Windows
 {
     /// <summary>
-    /// Logika interakcji dla klasy MainWindow.xaml
+    /// Logika interakcji dla klasy AddContractorWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class AddContractorWindow : Window
     {
-        public MainWindow()
+        public AddContractorWindow()
         {
             InitializeComponent();
         }
