@@ -1,7 +1,4 @@
-﻿using System;
-using System.Diagnostics;
-using System.Windows;
-using System.Windows.Controls;
+﻿using System.Windows;
 using System.Windows.Input;
 using WarehouseManagementUnia.Views;
 
@@ -10,69 +7,67 @@ namespace WarehouseManagementUnia.ViewModels
     public class LoginViewModel : ViewModelBase
     {
         private string _username;
+        private string _password;
+        private string _errorMessage;
+        private readonly RelayCommand<object> _loginCommand;
+
         public string Username
         {
             get => _username;
-            set { _username = value; OnPropertyChanged(); }
+            set
+            {
+                _username = value;
+                OnPropertyChanged();
+                _loginCommand.RaiseCanExecuteChanged();
+            }
         }
 
-        public ICommand LoginCommand { get; }
+        public string Password
+        {
+            get => _password;
+            set
+            {
+                _password = value;
+                OnPropertyChanged();
+                _loginCommand.RaiseCanExecuteChanged();
+            }
+        }
+
+        public string ErrorMessage
+        {
+            get => _errorMessage;
+            set { _errorMessage = value; OnPropertyChanged(); }
+        }
+
+        public ICommand LoginCommand => _loginCommand;
 
         public LoginViewModel()
         {
-            LoginCommand = new RelayCommand<PasswordBox>(ExecuteLogin, CanExecuteLogin);
+            _loginCommand = new RelayCommand<object>(ExecuteLogin, CanLogin);
         }
 
-        private bool CanExecuteLogin(PasswordBox parameter)
+        private bool CanLogin(object parameter)
         {
-            // Allow execution unless specific conditions are added
-            return true;
+            return !string.IsNullOrEmpty(Username) && !string.IsNullOrEmpty(Password);
         }
 
-        private void ExecuteLogin(PasswordBox passwordBox)
+        private void ExecuteLogin(object parameter)
         {
-            try
+            // Simple hardcoded login for demo (replace with DB check in production)
+            if (Username == "admin" && Password == "admin123")
             {
-                Debug.WriteLine($"Login attempted with username: {Username}");
-                if (passwordBox == null)
+                var mainView = new MainView
                 {
-                    Debug.WriteLine("PasswordBox is null");
-                    MessageBox.Show("Password field is missing.");
-                    return;
-                }
-
-                string password = passwordBox.Password;
-                Debug.WriteLine($"Password entered: {password}");
-
-                if (Username == "admin" && password == "admin123")
-                {
-                    Debug.WriteLine("Admin login successful");
-                    OpenMainWindow("Admin");
-                }
-                else if (Username == "user" && password == "user123")
-                {
-                    Debug.WriteLine("User login successful");
-                    OpenMainWindow("User");
-                }
-                else
-                {
-                    Debug.WriteLine("Invalid credentials");
-                    MessageBox.Show("Invalid credentials");
-                }
+                    DataContext = new MainViewModel()
+                };
+                Application.Current.MainWindow.Close();
+                Application.Current.MainWindow = mainView;
+                mainView.Show();
             }
-            catch (Exception ex)
+            else
             {
-                Debug.WriteLine($"Login error: {ex.Message}");
-                MessageBox.Show($"An error occurred: {ex.Message}");
+                ErrorMessage = "Invalid username or password.";
             }
-        }
-
-        private void OpenMainWindow(string role)
-        {
-            Debug.WriteLine($"Opening MainWindow with role: {role}");
-            var mainWindow = new MainView { DataContext = new MainViewModel(role) };
-            mainWindow.Show();
-            Application.Current.Windows[0].Close();
         }
     }
 }

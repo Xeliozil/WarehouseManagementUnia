@@ -1,8 +1,7 @@
-﻿using System;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Data.SqlClient;
-using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using WarehouseManagementUnia.Models;
 using WarehouseManagementUnia.Views;
@@ -14,8 +13,8 @@ namespace WarehouseManagementUnia.ViewModels
         private ObservableCollection<Warehouse> _warehouses;
         private ObservableCollection<Product> _products;
         private Warehouse _selectedWarehouse;
-        private string _filterName;
-        private readonly string _userRole;
+        public ICommand WarehouseChangedCommand { get; }
+        public ICommand OpenDocumentViewCommand { get; }
 
         public ObservableCollection<Warehouse> Warehouses
         {
@@ -40,30 +39,17 @@ namespace WarehouseManagementUnia.ViewModels
             }
         }
 
-        public string FilterName
+        public StockViewModel()
         {
-            get => _filterName;
-            set { _filterName = value; OnPropertyChanged(); }
-        }
-
-        public ICommand FilterCommand { get; }
-        public ICommand AddProductCommand { get; }
-        public ICommand OpenDocumentCommand { get; }
-
-        public StockViewModel(string userRole)
-        {
-            _userRole = userRole;
             Warehouses = new ObservableCollection<Warehouse>();
             Products = new ObservableCollection<Product>();
-            FilterCommand = new RelayCommand<object>(ExecuteFilter);
-            AddProductCommand = new RelayCommand<object>(ExecuteAddProduct);
-            OpenDocumentCommand = new RelayCommand<object>(ExecuteOpenDocument);
+            WarehouseChangedCommand = new RelayCommand<object>(ExecuteWarehouseChanged);
+            OpenDocumentViewCommand = new RelayCommand<object>(ExecuteOpenDocumentView);
             LoadWarehouses();
         }
 
         private void LoadWarehouses()
         {
-            Warehouses.Clear();
             using (var conn = new SqlConnection("Server=(localdb)\\MSSQLLocalDB;Database=UniaWarehouse;Trusted_Connection=True;"))
             {
                 conn.Open();
@@ -80,30 +66,18 @@ namespace WarehouseManagementUnia.ViewModels
                     }
                 }
             }
-            if (Warehouses.Any())
-            {
-                SelectedWarehouse = Warehouses.First();
-            }
+            SelectedWarehouse = Warehouses.FirstOrDefault();
         }
 
-        public void LoadProducts()
+        private void LoadProducts()
         {
             if (SelectedWarehouse == null) return;
             Products.Clear();
             using (var conn = new SqlConnection("Server=(localdb)\\MSSQLLocalDB;Database=UniaWarehouse;Trusted_Connection=True;"))
             {
                 conn.Open();
-                var query = "SELECT p.ProductId, p.Name, p.Quantity, w.WarehouseCode " +
-                            "FROM Products p JOIN Warehouses w ON p.WarehouseId = w.WarehouseId " +
-                            "WHERE p.WarehouseId = @WarehouseId AND p.Quantity > 0";
-                if (!string.IsNullOrEmpty(FilterName))
-                    query += " AND p.Name LIKE @FilterName";
-
-                var cmd = new SqlCommand(query, conn);
+                var cmd = new SqlCommand("SELECT ProductId, Name, Quantity, Price FROM Products WHERE WarehouseId = @WarehouseId AND Quantity > 0", conn);
                 cmd.Parameters.AddWithValue("@WarehouseId", SelectedWarehouse.WarehouseId);
-                if (!string.IsNullOrEmpty(FilterName))
-                    cmd.Parameters.AddWithValue("@FilterName", $"%{FilterName}%");
-
                 using (var reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
@@ -113,51 +87,35 @@ namespace WarehouseManagementUnia.ViewModels
                             ProductId = reader.GetInt32(0),
                             Name = reader.GetString(1),
                             Quantity = reader.GetInt32(2),
-                            WarehouseCode = reader.GetString(3)
+                            Price = reader.GetDecimal(3)
                         });
                     }
                 }
             }
         }
 
-        private void ExecuteFilter(object parameter)
+        private void ExecuteWarehouseChanged(object parameter)
         {
             LoadProducts();
         }
 
-        private void ExecuteAddProduct(object parameter)
+        private void ExecuteOpenDocumentView(object parameter)
         {
-            if (_userRole != "Admin")
+            if (SelectedWarehouse != null)
             {
-                MessageBox.Show("Only admins can add products.");
-                return;
+                var documentViewModel = new DocumentViewModel(SelectedWarehouse);
+                var documentView = new DocumentView { DataContext = documentViewModel };
+                var window = new Window
+                {
+                    Title = "Document Management",
+                    Content = documentView,
+                    Width = 800,
+                    Height = 450,
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen
+                };
+                documentViewModel.OnDocumentGenerated = () => LoadProducts();
+                window.ShowDialog();
             }
-            if (SelectedWarehouse == null)
-            {
-                MessageBox.Show("Please select a warehouse before adding a product.");
-                return;
-            }
-            var addProductWindow = new AddProductView { DataContext = new AddProductViewModel(SelectedWarehouse) };
-            addProductWindow.ShowDialog();
-            LoadProducts();
-        }
-
-        private void ExecuteOpenDocument(object parameter)
-        {
-            if (_userRole != "Admin")
-            {
-                MessageBox.Show("Only admins can generate documents.");
-                return;
-            }
-            if (SelectedWarehouse == null)
-            {
-                MessageBox.Show("Please select a warehouse before generating a document.");
-                return;
-            }
-            var documentViewModel = new DocumentViewModel(SelectedWarehouse);
-            documentViewModel.OnDocumentGenerated = LoadProducts; // Refresh products after document generation
-            var documentWindow = new DocumentView { DataContext = documentViewModel };
-            documentWindow.ShowDialog();
         }
     }
 }

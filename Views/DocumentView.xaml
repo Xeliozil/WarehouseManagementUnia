@@ -1,72 +1,96 @@
-﻿<Window x:Class="WarehouseManagementUnia.Views.DocumentView"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
-        Title="Generate Document" Height="600" Width="500">
-    <Grid>
-        <StackPanel Margin="10">
-            <TextBlock Text="Document Type:"/>
+﻿<UserControl x:Class="WarehouseManagementUnia.Views.DocumentView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
             <ComboBox ItemsSource="{Binding DocumentTypes}" 
                       SelectedItem="{Binding SelectedDocumentType}" 
                       DisplayMemberPath="TypeName" 
-                      Margin="5">
+                      Width="150">
                 <i:Interaction.Triggers>
                     <i:EventTrigger EventName="SelectionChanged">
                         <i:InvokeCommandAction Command="{Binding DocumentTypeChangedCommand}"/>
                     </i:EventTrigger>
                 </i:Interaction.Triggers>
             </ComboBox>
-
-            <TextBlock Text="Source Warehouse:"/>
-            <ComboBox ItemsSource="{Binding Warehouses}" 
-                      SelectedItem="{Binding SourceWarehouse}" 
-                      DisplayMemberPath="WarehouseCode" 
-                      Margin="5" 
-                      IsEnabled="{Binding IsSourceWarehouseEditable}"/>
-
-            <TextBlock Text="Products:" Margin="0,10,0,5"/>
-            <StackPanel Orientation="Horizontal">
-                <ComboBox ItemsSource="{Binding AvailableProducts}" 
-                          SelectedItem="{Binding SelectedProductForAdd}" 
-                          DisplayMemberPath="Name" 
-                          Width="300" Margin="5"/>
-                <Button Content="+" Command="{Binding AddProductCommand}" Width="30" Margin="5"/>
-                <Button Content="-" Command="{Binding RemoveProductCommand}" Width="30" Margin="5"/>
-            </StackPanel>
-            <ListBox ItemsSource="{Binding SelectedProducts}" Height="100" Margin="5">
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="{Binding Product.Name}" Width="200"/>
-                            <TextBox Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}" Width="50" Margin="5,0"/>
-                        </StackPanel>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
-
-            <TextBlock Text="Contractor (Optional):" Visibility="{Binding IsContractorVisible, Converter={StaticResource BooleanToVisibilityConverter}}"/>
             <ComboBox ItemsSource="{Binding Contractors}" 
                       SelectedItem="{Binding SelectedContractor}" 
                       DisplayMemberPath="Name" 
-                      Margin="5" 
+                      Width="150" 
+                      Margin="10,0,0,0" 
                       Visibility="{Binding IsContractorVisible, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-
-            <TextBlock Text="Target Warehouse (for Transfer):" Visibility="{Binding IsTargetWarehouseVisible, Converter={StaticResource BooleanToVisibilityConverter}}"/>
             <ComboBox ItemsSource="{Binding AvailableTargetWarehouses}" 
                       SelectedItem="{Binding TargetWarehouse}" 
                       DisplayMemberPath="WarehouseCode" 
-                      Margin="5" 
+                      Width="150" 
+                      Margin="10,0,0,0" 
                       Visibility="{Binding IsTargetWarehouseVisible, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+        </StackPanel>
 
-            <TextBlock Text="Report Columns:" Margin="5"/>
-            <CheckBox Content="Include Product Name" IsChecked="{Binding IncludeName}" Margin="5"/>
-            <CheckBox Content="Include Quantity" IsChecked="{Binding IncludeQuantity}" Margin="5"/>
-            <CheckBox Content="Include Document Type" IsChecked="{Binding IncludeDocumentType}" Margin="5"/>
-            <CheckBox Content="Include Contractor" IsChecked="{Binding IncludeContractor}" Margin="5" Visibility="{Binding IsContractorVisible, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-            <CheckBox Content="Include Warehouse" IsChecked="{Binding IncludeWarehouse}" Margin="5"/>
+        <Grid Grid.Row="1" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <ComboBox Grid.Column="0" 
+                      ItemsSource="{Binding AvailableProducts}" 
+                      SelectedItem="{Binding SelectedProductForAdd}" 
+                      DisplayMemberPath="Name"/>
+            <Button Grid.Column="1" 
+                    Content="+" 
+                    Command="{Binding AddProductCommand}" 
+                    Width="30" 
+                    Margin="5,0,0,0"/>
+            <Button Grid.Column="2" 
+                    Content="−" 
+                    Command="{Binding RemoveProductCommand}" 
+                    Width="30" 
+                    Margin="5,0,0,0"/>
+            <Button Grid.Column="3" 
+                    Content="New Product" 
+                    Command="{Binding AddNewProductCommand}" 
+                    Width="100" 
+                    Margin="5,0,0,0" 
+                    Visibility="{Binding IsNewProductButtonVisible, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+        </Grid>
 
-            <Button Content="Generate PDF" Command="{Binding GeneratePdfCommand}" Margin="5"/>
-            <Button Content="Generate CSV" Command="{Binding GenerateCsvCommand}" Margin="5"/>
+        <DataGrid Grid.Row="2" 
+                  ItemsSource="{Binding SelectedProducts}" 
+                  AutoGenerateColumns="False">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Name" Binding="{Binding Product.Name}" Width="*"/>
+                <DataGridTextColumn Header="Quantity" Binding="{Binding Quantity}" Width="100"/>
+                <DataGridTextColumn Header="Price" Binding="{Binding Product.Price, StringFormat=C}" Width="100"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <StackPanel Grid.Row="3" Margin="0,10,0,10">
+            <CheckBox Content="Include Document Type" IsChecked="{Binding IncludeDocumentType}"/>
+            <CheckBox Content="Include Product Name" IsChecked="{Binding IncludeName}"/>
+            <CheckBox Content="Include Quantity" IsChecked="{Binding IncludeQuantity}"/>
+            <CheckBox Content="Include Price" IsChecked="{Binding IncludePrice}"/>
+            <CheckBox Content="Include Contractor" IsChecked="{Binding IncludeContractor}" Visibility="{Binding IsContractorVisible, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+            <CheckBox Content="Include Warehouse" IsChecked="{Binding IncludeWarehouse}"/>
+        </StackPanel>
+
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="Generate PDF" Command="{Binding GeneratePdfCommand}" Margin="0,0,10,0"/>
+            <Button Content="Generate CSV" Command="{Binding GenerateCsvCommand}"/>
         </StackPanel>
     </Grid>
-</Window>
+</UserControl>

@@ -1,16 +1,12 @@
 ﻿using System.Collections.ObjectModel;
 using System.Data.SqlClient;
-using System.Windows;
-using System.Windows.Input;
 using WarehouseManagementUnia.Models;
-using WarehouseManagementUnia.Views;
 
 namespace WarehouseManagementUnia.ViewModels
 {
     public class ContractorsViewModel : ViewModelBase
     {
         private ObservableCollection<Contractor> _contractors;
-        private readonly string _userRole;
 
         public ObservableCollection<Contractor> Contractors
         {
@@ -18,19 +14,14 @@ namespace WarehouseManagementUnia.ViewModels
             set { _contractors = value; OnPropertyChanged(); }
         }
 
-        public ICommand AddContractorCommand { get; }
-
-        public ContractorsViewModel(string userRole)
+        public ContractorsViewModel()
         {
-            _userRole = userRole;
             Contractors = new ObservableCollection<Contractor>();
-            AddContractorCommand = new RelayCommand<object>(ExecuteAddContractor);
             LoadContractors();
         }
 
         private void LoadContractors()
         {
-            Contractors.Clear();
             using (var conn = new SqlConnection("Server=(localdb)\\MSSQLLocalDB;Database=UniaWarehouse;Trusted_Connection=True;"))
             {
                 conn.Open();
@@ -49,18 +40,6 @@ namespace WarehouseManagementUnia.ViewModels
                     }
                 }
             }
-        }
-
-        private void ExecuteAddContractor(object parameter)
-        {
-            if (_userRole != "Admin")
-            {
-                MessageBox.Show("Only admins can add contractors.");
-                return;
-            }
-            var addContractorWindow = new AddContractorView { DataContext = new AddContractorViewModel() };
-            addContractorWindow.ShowDialog();
-            LoadContractors();
         }
     }
 }

@@ -1,8 +1,8 @@
-﻿using System.Windows;
+﻿using System.Windows.Controls;
 
 namespace WarehouseManagementUnia.Views
 {
-    public partial class DocumentView : Window
+    public partial class DocumentView : UserControl
     {
         public DocumentView()
         {

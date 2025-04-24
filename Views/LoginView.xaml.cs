@@ -1,25 +1,21 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
 
-namespace WarehouseManagementUnia.Views
+namespace WarehouseManagementUnia.ViewModels
 {
-    public partial class LoginView : Window
+    public partial class LoginView : UserControl
     {
         public LoginView()
         {
             InitializeComponent();
-            DataContext = new ViewModels.LoginViewModel();
+            passwordBox.PasswordChanged += PasswordBox_PasswordChanged;
         }
 
-        private void PasswordBox_KeyDown(object sender, KeyEventArgs e)
+        private void PasswordBox_PasswordChanged(object sender, RoutedEventArgs e)
         {
-            if (e.Key == Key.Enter)
+            if (DataContext is LoginViewModel viewModel)
             {
-                if (DataContext is ViewModels.LoginViewModel viewModel && sender is PasswordBox passwordBox)
-                {
-                    viewModel.LoginCommand.Execute(passwordBox);
-                }
+                viewModel.Password = passwordBox.Password;
             }
         }
     }

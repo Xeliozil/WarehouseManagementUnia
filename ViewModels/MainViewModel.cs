@@ -1,14 +1,14 @@
-﻿using System;
-using System.Windows;
-using System.Windows.Input;
+﻿using System.Windows.Input;
+using WarehouseManagementUnia.Models;
 using WarehouseManagementUnia.Views;
 
 namespace WarehouseManagementUnia.ViewModels
 {
     public class MainViewModel : ViewModelBase
     {
-        private readonly string _userRole;
         private object _currentView;
+        private StockViewModel _stockViewModel;
+        private ContractorsViewModel _contractorsViewModel;
 
         public object CurrentView
         {
@@ -18,54 +18,25 @@ namespace WarehouseManagementUnia.ViewModels
 
         public ICommand ShowStockViewCommand { get; }
         public ICommand ShowContractorsViewCommand { get; }
-        public ICommand ShowDocumentsViewCommand { get; }
 
-        public MainViewModel(string userRole)
+        public MainViewModel()
         {
-            _userRole = userRole;
-            ShowStockViewCommand = new RelayCommand<object>(ShowStockView);
-            ShowContractorsViewCommand = new RelayCommand<object>(ShowContractorsView);
-            ShowDocumentsViewCommand = new RelayCommand<object>(ShowDocumentsView);
-            // Set default view
-            ShowStockView(null);
+            _stockViewModel = new StockViewModel();
+            _contractorsViewModel = new ContractorsViewModel();
+            CurrentView = new StockView { DataContext = _stockViewModel };
+
+            ShowStockViewCommand = new RelayCommand<object>(ExecuteShowStockView);
+            ShowContractorsViewCommand = new RelayCommand<object>(ExecuteShowContractorsView);
         }
 
-        private void ShowStockView(object parameter)
+        private void ExecuteShowStockView(object parameter)
         {
-            try
-            {
-                CurrentView = new StockView { DataContext = new StockViewModel(_userRole) };
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error opening Stock view: {ex.Message}");
-            }
+            CurrentView = new StockView { DataContext = _stockViewModel };
         }
 
-        private void ShowContractorsView(object parameter)
+        private void ExecuteShowContractorsView(object parameter)
         {
-            try
-            {
-                CurrentView = new ContractorsView { DataContext = new ContractorsViewModel(_userRole) };
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error opening Contractors view: {ex.Message}");
-            }
-        }
-
-        private void ShowDocumentsView(object parameter)
-        {
-            try
-            {
-                var documentsView = new DocumentsView();
-                documentsView.DataContext = new DocumentsViewModel(_userRole);
-                CurrentView = documentsView;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error opening Documents view: {ex.Message}");
-            }
+            CurrentView = new ContractorsView { DataContext = _contractorsViewModel };
         }
     }
 }
