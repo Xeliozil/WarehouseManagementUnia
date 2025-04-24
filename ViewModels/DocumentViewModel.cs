@@ -2,6 +2,7 @@
 using PdfSharp.Drawing;
 using PdfSharp.Pdf;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Data.SqlClient;
 using System.IO;
@@ -169,7 +170,7 @@ namespace WarehouseManagementUnia.ViewModels
 
         public DocumentViewModel(Warehouse defaultSourceWarehouse)
         {
-            _defaultSourceWarehouse = defaultSourceWarehouse ?? throw new ArgumentNullException(nameof(defaultSourceWarehouse));
+            _defaultSourceWarehouse = defaultSourceWarehouse;
             DocumentTypes = new ObservableCollection<DocumentType>();
             AvailableProducts = new ObservableCollection<Product>();
             SelectedProducts = new ObservableCollection<SelectedProductItem>();
@@ -181,7 +182,10 @@ namespace WarehouseManagementUnia.ViewModels
             DocumentTypeChangedCommand = new RelayCommand<object>(ExecuteDocumentTypeChanged);
             AddProductCommand = new RelayCommand<object>(ExecuteAddProduct, CanAddProduct);
             RemoveProductCommand = new RelayCommand<object>(ExecuteRemoveProduct, CanRemoveProduct);
-            LoadData();
+            if (defaultSourceWarehouse != null)
+            {
+                LoadData();
+            }
         }
 
         private void LoadData()
@@ -345,19 +349,28 @@ namespace WarehouseManagementUnia.ViewModels
 
         private void ExecuteGeneratePdf(object parameter)
         {
-            var documentIds = SaveDocuments();
-            if (!documentIds.Any()) return;
+            int documentId = SaveDocument();
+            if (documentId == 0) return;
 
+            GeneratePdfReport(documentId, false, saveFileDialog =>
+            {
+                saveFileDialog.Filter = "PDF files (*.pdf)|*.pdf";
+                saveFileDialog.FileName = $"Document_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+                saveFileDialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            });
+        }
+
+        public void GeneratePdfReport(int documentId, bool isCopy, Action<SaveFileDialog> configureSaveFileDialog)
+        {
             try
             {
-                var saveFileDialog = new SaveFileDialog
-                {
-                    Filter = "PDF files (*.pdf)|*.pdf",
-                    FileName = $"Document_{DateTime.Now:yyyyMMdd_HHmmss}.pdf",
-                    InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
-                };
+                var saveFileDialog = new SaveFileDialog();
+                configureSaveFileDialog(saveFileDialog);
 
                 if (saveFileDialog.ShowDialog() != true) return;
+
+                // Fetch document data
+                DocumentReportData reportData = GetDocumentReportData(documentId);
 
                 var document = new PdfDocument();
                 var page = document.AddPage();
@@ -367,7 +380,7 @@ namespace WarehouseManagementUnia.ViewModels
                 double x = 50, y = 50;
 
                 // Generate title
-                var docType = SelectedDocumentType.TypeName;
+                var docType = reportData.DocumentType;
                 var docTypeCode = docType switch
                 {
                     "Delivery" => "in",
@@ -375,9 +388,9 @@ namespace WarehouseManagementUnia.ViewModels
                     "Transfer" => "mm",
                     _ => "unk"
                 };
-                var docNumber = documentIds.First().ToString("D3"); // First document ID, padded to 3 digits
-                var docName = $"{DateTime.Now:yyyy}/{docTypeCode}/{DateTime.Now:MM-dd}/{docNumber}";
-                var title = $"{docType} {docName}";
+                var docNumber = documentId.ToString("D3");
+                var docName = $"{reportData.DocumentDate:yyyy}/{docTypeCode}/{reportData.DocumentDate:MM-dd}/{docNumber}";
+                var title = isCopy ? $"COPY {docType} {docName}" : $"{docType} {docName}";
                 gfx.DrawString(title, titleFont, XBrushes.Black, new XPoint(x, y));
                 y += 20;
 
@@ -386,20 +399,20 @@ namespace WarehouseManagementUnia.ViewModels
                 y += 20;
 
                 // Calculate dynamic column widths
-                var headers = new System.Collections.Generic.List<string>();
-                if (IncludeDocumentType) headers.Add("Document Type");
-                if (IncludeName) headers.Add("Product");
-                if (IncludeQuantity) headers.Add("Quantity");
-                if (IncludeContractor && IsContractorVisible) headers.Add("Contractor");
-                if (IncludeWarehouse) headers.Add("Warehouse");
+                var headers = new List<string>();
+                if (reportData.IncludeDocumentType) headers.Add("Document Type");
+                if (reportData.IncludeName) headers.Add("Product");
+                if (reportData.IncludeQuantity) headers.Add("Quantity");
+                if (reportData.IncludeContractor && reportData.IsContractorVisible) headers.Add("Contractor");
+                if (reportData.IncludeWarehouse) headers.Add("Warehouse");
 
                 var columnWidths = new double[headers.Count];
                 for (int i = 0; i < headers.Count; i++)
                 {
-                    columnWidths[i] = headers[i].Length * 8; // Base width on header length
-                    foreach (var item in SelectedProducts)
+                    columnWidths[i] = headers[i].Length * 8;
+                    foreach (var item in reportData.Items)
                     {
-                        var value = GetColumnValue(i, item.Product, docType);
+                        var value = GetColumnValue(i, item, reportData);
                         columnWidths[i] = Math.Max(columnWidths[i], (value?.Length ?? 0) * 8);
                     }
                 }
@@ -409,19 +422,19 @@ namespace WarehouseManagementUnia.ViewModels
                 for (int i = 0; i < headers.Count; i++)
                 {
                     gfx.DrawString(headers[i], font, XBrushes.Black, new XPoint(currentX, y));
-                    currentX += columnWidths[i] + 10; // Spacing between columns
+                    currentX += columnWidths[i] + 5;
                 }
                 y += 20;
 
                 // Draw rows
-                foreach (var item in SelectedProducts)
+                foreach (var item in reportData.Items)
                 {
                     currentX = x;
                     for (int i = 0; i < headers.Count; i++)
                     {
-                        var value = GetColumnValue(i, item.Product, docType);
+                        var value = GetColumnValue(i, item, reportData);
                         gfx.DrawString(value, font, XBrushes.Black, new XPoint(currentX, y));
-                        currentX += columnWidths[i] + 10;
+                        currentX += columnWidths[i] + 5;
                     }
                     y += 20;
                 }
@@ -429,7 +442,7 @@ namespace WarehouseManagementUnia.ViewModels
                 document.Save(saveFileDialog.FileName);
                 document.Close();
                 MessageBox.Show($"PDF generated successfully at {saveFileDialog.FileName}");
-                OnDocumentGenerated?.Invoke();
+                if (!isCopy) OnDocumentGenerated?.Invoke();
             }
             catch (Exception ex)
             {
@@ -437,40 +450,109 @@ namespace WarehouseManagementUnia.ViewModels
             }
         }
 
-        private string GetColumnValue(int columnIndex, Product product, string docType)
+        private string GetColumnValue(int columnIndex, SelectedProductItem item, DocumentReportData reportData)
         {
             int currentIndex = 0;
-            if (IncludeDocumentType)
+            if (reportData.IncludeDocumentType)
             {
-                if (columnIndex == currentIndex) return docType;
+                if (columnIndex == currentIndex) return reportData.DocumentType;
                 currentIndex++;
             }
-            if (IncludeName)
+            if (reportData.IncludeName)
             {
-                if (columnIndex == currentIndex) return product.Name;
+                if (columnIndex == currentIndex) return item.Product.Name;
                 currentIndex++;
             }
-            if (IncludeQuantity)
+            if (reportData.IncludeQuantity)
             {
-                if (columnIndex == currentIndex) return SelectedProducts.First(sp => sp.Product.ProductId == product.ProductId).Quantity.ToString();
+                if (columnIndex == currentIndex) return item.Quantity.ToString();
                 currentIndex++;
             }
-            if (IncludeContractor && IsContractorVisible)
+            if (reportData.IncludeContractor && reportData.IsContractorVisible)
             {
-                if (columnIndex == currentIndex) return $"{SelectedContractor?.Name} (NIP: {SelectedContractor?.NIP ?? "N/A"})";
+                if (columnIndex == currentIndex) return $"{reportData.ContractorName} (NIP: {reportData.ContractorNIP ?? "N/A"})";
                 currentIndex++;
             }
-            if (IncludeWarehouse)
+            if (reportData.IncludeWarehouse)
             {
-                if (columnIndex == currentIndex) return SourceWarehouse.WarehouseCode;
+                if (columnIndex == currentIndex) return reportData.WarehouseCode;
             }
             return string.Empty;
         }
 
+        private DocumentReportData GetDocumentReportData(int documentId)
+        {
+            using (var conn = new SqlConnection("Server=(localdb)\\MSSQLLocalDB;Database=UniaWarehouse;Trusted_Connection=True;"))
+            {
+                conn.Open();
+                var reportData = new DocumentReportData();
+
+                // Fetch document metadata
+                var cmd = new SqlCommand(
+                    @"SELECT dt.TypeName, d.DocumentDate, w.WarehouseCode, c.Name AS ContractorName, c.NIP, 
+                             d.IncludeDocumentType, d.IncludeName, d.IncludeQuantity, d.IncludeContractor, d.IncludeWarehouse
+                      FROM Documents d
+                      JOIN DocumentTypes dt ON d.DocumentTypeId = dt.DocumentTypeId
+                      JOIN Warehouses w ON d.WarehouseId = w.WarehouseId
+                      LEFT JOIN Contractors c ON d.ContractorId = c.ContractorId
+                      WHERE d.DocumentId = @DocumentId", conn);
+                cmd.Parameters.AddWithValue("@DocumentId", documentId);
+                using (var reader = cmd.ExecuteReader())
+                {
+                    if (!reader.Read())
+                    {
+                        throw new Exception($"Document with ID {documentId} not found.");
+                    }
+                    reportData.DocumentType = reader.GetString(0);
+                    reportData.DocumentDate = reader.GetDateTime(1);
+                    reportData.WarehouseCode = reader.GetString(2);
+                    reportData.ContractorName = reader.IsDBNull(3) ? null : reader.GetString(3);
+                    reportData.ContractorNIP = reader.IsDBNull(4) ? null : reader.GetString(4);
+                    reportData.IncludeDocumentType = reader.GetBoolean(5);
+                    reportData.IncludeName = reader.GetBoolean(6);
+                    reportData.IncludeQuantity = reader.GetBoolean(7);
+                    reportData.IncludeContractor = reader.GetBoolean(8);
+                    reportData.IncludeWarehouse = reader.GetBoolean(9);
+                    reportData.IsContractorVisible = reportData.DocumentType != "Transfer";
+                }
+
+                // Fetch document items
+                cmd = new SqlCommand(
+                    @"SELECT p.ProductId, p.Name, p.Quantity, di.Quantity AS DocumentQuantity
+                      FROM DocumentItems di
+                      JOIN Products p ON di.ProductId = p.ProductId
+                      WHERE di.DocumentId = @DocumentId", conn);
+                cmd.Parameters.AddWithValue("@DocumentId", documentId);
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        reportData.Items.Add(new SelectedProductItem
+                        {
+                            Product = new Product
+                            {
+                                ProductId = reader.GetInt32(0),
+                                Name = reader.GetString(1),
+                                Quantity = reader.GetInt32(2)
+                            },
+                            Quantity = reader.GetInt32(3)
+                        });
+                    }
+                }
+
+                if (!reportData.Items.Any() && reportData.IncludeName)
+                {
+                    MessageBox.Show($"Warning: No products found for document ID {documentId}.");
+                }
+
+                return reportData;
+            }
+        }
+
         private void ExecuteGenerateCsv(object parameter)
         {
-            var documentIds = SaveDocuments();
-            if (!documentIds.Any()) return;
+            int documentId = SaveDocument();
+            if (documentId == 0) return;
 
             try
             {
@@ -486,7 +568,7 @@ namespace WarehouseManagementUnia.ViewModels
                 using (var writer = new StreamWriter(saveFileDialog.FileName))
                 {
                     // Write headers
-                    var headers = new System.Collections.Generic.List<string>();
+                    var headers = new List<string>();
                     if (IncludeName) headers.Add("Product");
                     if (IncludeQuantity) headers.Add("Quantity");
                     if (IncludeDocumentType) headers.Add("Document Type");
@@ -497,7 +579,7 @@ namespace WarehouseManagementUnia.ViewModels
                     // Write data
                     foreach (var item in SelectedProducts)
                     {
-                        var data = new System.Collections.Generic.List<string>();
+                        var data = new List<string>();
                         if (IncludeName) data.Add(item.Product.Name);
                         if (IncludeQuantity) data.Add(item.Quantity.ToString());
                         if (IncludeDocumentType) data.Add(SelectedDocumentType.TypeName);
@@ -515,81 +597,109 @@ namespace WarehouseManagementUnia.ViewModels
             }
         }
 
-        private System.Collections.Generic.List<int> SaveDocuments()
+        private int SaveDocument()
         {
-            var documentIds = new System.Collections.Generic.List<int>();
             try
             {
                 using (var conn = new SqlConnection("Server=(localdb)\\MSSQLLocalDB;Database=UniaWarehouse;Trusted_Connection=True;"))
                 {
                     conn.Open();
-                    foreach (var item in SelectedProducts)
+                    // Begin transaction
+                    using (var transaction = conn.BeginTransaction())
                     {
-                        var cmd = new SqlCommand(
-                            "INSERT INTO Documents (DocumentTypeId, ProductId, WarehouseId, ContractorId, Quantity, DocumentDate) " +
-                            "OUTPUT INSERTED.DocumentId " +
-                            "VALUES (@DocumentTypeId, @ProductId, @WarehouseId, @ContractorId, @Quantity, @DocumentDate)", conn);
-                        cmd.Parameters.AddWithValue("@DocumentTypeId", SelectedDocumentType.DocumentTypeId);
-                        cmd.Parameters.AddWithValue("@ProductId", item.Product.ProductId);
-                        cmd.Parameters.AddWithValue("@WarehouseId", SourceWarehouse.WarehouseId);
-                        cmd.Parameters.AddWithValue("@ContractorId", SelectedContractor != null && IsContractorVisible ? SelectedContractor.ContractorId : (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@Quantity", item.Quantity);
-                        cmd.Parameters.AddWithValue("@DocumentDate", DateTime.Now);
-                        var documentId = (int)cmd.ExecuteScalar();
-                        documentIds.Add(documentId);
+                        try
+                        {
+                            // Insert single document
+                            var cmd = new SqlCommand(
+                                @"INSERT INTO Documents (DocumentTypeId, WarehouseId, ContractorId, DocumentDate, 
+                                                        IncludeDocumentType, IncludeName, IncludeQuantity, IncludeContractor, IncludeWarehouse)
+                                  OUTPUT INSERTED.DocumentId
+                                  VALUES (@DocumentTypeId, @WarehouseId, @ContractorId, @DocumentDate, 
+                                          @IncludeDocumentType, @IncludeName, @IncludeQuantity, @IncludeContractor, @IncludeWarehouse)", conn, transaction);
+                            cmd.Parameters.AddWithValue("@DocumentTypeId", SelectedDocumentType.DocumentTypeId);
+                            cmd.Parameters.AddWithValue("@WarehouseId", SourceWarehouse.WarehouseId);
+                            cmd.Parameters.AddWithValue("@ContractorId", SelectedContractor != null && IsContractorVisible ? SelectedContractor.ContractorId : (object)DBNull.Value);
+                            cmd.Parameters.AddWithValue("@DocumentDate", DateTime.Now);
+                            cmd.Parameters.AddWithValue("@IncludeDocumentType", IncludeDocumentType);
+                            cmd.Parameters.AddWithValue("@IncludeName", IncludeName);
+                            cmd.Parameters.AddWithValue("@IncludeQuantity", IncludeQuantity);
+                            cmd.Parameters.AddWithValue("@IncludeContractor", IncludeContractor && IsContractorVisible);
+                            cmd.Parameters.AddWithValue("@IncludeWarehouse", IncludeWarehouse);
+                            int documentId = (int)cmd.ExecuteScalar();
 
-                        if (SelectedDocumentType.TypeName == "Delivery")
-                        {
-                            cmd = new SqlCommand("UPDATE Products SET Quantity = Quantity + @Quantity WHERE ProductId = @ProductId", conn);
-                            cmd.Parameters.AddWithValue("@Quantity", item.Quantity);
-                            cmd.Parameters.AddWithValue("@ProductId", item.Product.ProductId);
-                            cmd.ExecuteNonQuery();
-                        }
-                        else if (SelectedDocumentType.TypeName == "Issue")
-                        {
-                            if (item.Product.Quantity < item.Quantity)
+                            // Insert document items
+                            foreach (var item in SelectedProducts)
                             {
-                                MessageBox.Show($"Cannot issue more than available stock for {item.Product.Name}.");
-                                return new System.Collections.Generic.List<int>();
-                            }
-                            cmd = new SqlCommand("UPDATE Products SET Quantity = Quantity - @Quantity WHERE ProductId = @ProductId", conn);
-                            cmd.Parameters.AddWithValue("@Quantity", item.Quantity);
-                            cmd.Parameters.AddWithValue("@ProductId", item.Product.ProductId);
-                            cmd.ExecuteNonQuery();
-                        }
-                        else if (SelectedDocumentType.TypeName == "Transfer")
-                        {
-                            if (item.Product.Quantity < item.Quantity)
-                            {
-                                MessageBox.Show($"Cannot transfer more than available stock for {item.Product.Name}.");
-                                return new System.Collections.Generic.List<int>();
-                            }
-                            // Reduce quantity in source warehouse
-                            cmd = new SqlCommand(
-                                "UPDATE Products SET Quantity = Quantity - @Quantity WHERE ProductId = @ProductId AND WarehouseId = @SourceWarehouseId", conn);
-                            cmd.Parameters.AddWithValue("@Quantity", item.Quantity);
-                            cmd.Parameters.AddWithValue("@ProductId", item.Product.ProductId);
-                            cmd.Parameters.AddWithValue("@SourceWarehouseId", SourceWarehouse.WarehouseId);
-                            cmd.ExecuteNonQuery();
+                                cmd = new SqlCommand(
+                                    "INSERT INTO DocumentItems (DocumentId, ProductId, Quantity) " +
+                                    "VALUES (@DocumentId, @ProductId, @Quantity)", conn, transaction);
+                                cmd.Parameters.AddWithValue("@DocumentId", documentId);
+                                cmd.Parameters.AddWithValue("@ProductId", item.Product.ProductId);
+                                cmd.Parameters.AddWithValue("@Quantity", item.Quantity);
+                                cmd.ExecuteNonQuery();
 
-                            // Add or update product in target warehouse
-                            cmd = new SqlCommand(
-                                "IF EXISTS (SELECT 1 FROM Products WHERE Name = @Name AND WarehouseId = @TargetWarehouseId) " +
-                                "UPDATE Products SET Quantity = Quantity + @Quantity WHERE Name = @Name AND WarehouseId = @TargetWarehouseId " +
-                                "ELSE INSERT INTO Products (Name, Quantity, WarehouseId) VALUES (@Name, @Quantity, @TargetWarehouseId)", conn);
-                            cmd.Parameters.AddWithValue("@Name", item.Product.Name);
-                            cmd.Parameters.AddWithValue("@Quantity", item.Quantity);
-                            cmd.Parameters.AddWithValue("@TargetWarehouseId", TargetWarehouse.WarehouseId);
-                            cmd.ExecuteNonQuery();
+                                if (SelectedDocumentType.TypeName == "Delivery")
+                                {
+                                    cmd = new SqlCommand(
+                                        "UPDATE Products SET Quantity = Quantity + @Quantity WHERE ProductId = @ProductId", conn, transaction);
+                                    cmd.Parameters.AddWithValue("@Quantity", item.Quantity);
+                                    cmd.Parameters.AddWithValue("@ProductId", item.Product.ProductId);
+                                    cmd.ExecuteNonQuery();
+                                }
+                                else if (SelectedDocumentType.TypeName == "Issue")
+                                {
+                                    if (item.Product.Quantity < item.Quantity)
+                                    {
+                                        throw new Exception($"Cannot issue more than available stock for {item.Product.Name}.");
+                                    }
+                                    cmd = new SqlCommand(
+                                        "UPDATE Products SET Quantity = Quantity - @Quantity WHERE ProductId = @ProductId", conn, transaction);
+                                    cmd.Parameters.AddWithValue("@Quantity", item.Quantity);
+                                    cmd.Parameters.AddWithValue("@ProductId", item.Product.ProductId);
+                                    cmd.ExecuteNonQuery();
+                                }
+                                else if (SelectedDocumentType.TypeName == "Transfer")
+                                {
+                                    if (item.Product.Quantity < item.Quantity)
+                                    {
+                                        throw new Exception($"Cannot transfer more than available stock for {item.Product.Name}.");
+                                    }
+                                    // Reduce quantity in source warehouse
+                                    cmd = new SqlCommand(
+                                        "UPDATE Products SET Quantity = Quantity - @Quantity WHERE ProductId = @ProductId AND WarehouseId = @SourceWarehouseId", conn, transaction);
+                                    cmd.Parameters.AddWithValue("@Quantity", item.Quantity);
+                                    cmd.Parameters.AddWithValue("@ProductId", item.Product.ProductId);
+                                    cmd.Parameters.AddWithValue("@SourceWarehouseId", SourceWarehouse.WarehouseId);
+                                    cmd.ExecuteNonQuery();
+
+                                    // Add or update product in target warehouse
+                                    cmd = new SqlCommand(
+                                        @"IF EXISTS (SELECT 1 FROM Products WHERE Name = @Name AND WarehouseId = @TargetWarehouseId)
+                                          UPDATE Products SET Quantity = Quantity + @Quantity WHERE Name = @Name AND WarehouseId = @TargetWarehouseId
+                                          ELSE INSERT INTO Products (Name, Quantity, WarehouseId) VALUES (@Name, @Quantity, @TargetWarehouseId)", conn, transaction);
+                                    cmd.Parameters.AddWithValue("@Name", item.Product.Name);
+                                    cmd.Parameters.AddWithValue("@Quantity", item.Quantity);
+                                    cmd.Parameters.AddWithValue("@TargetWarehouseId", TargetWarehouse.WarehouseId);
+                                    cmd.ExecuteNonQuery();
+                                }
+                            }
+
+                            transaction.Commit();
+                            return documentId;
+                        }
+                        catch (Exception ex)
+                        {
+                            transaction.Rollback();
+                            MessageBox.Show($"Error saving document: {ex.Message}");
+                            return 0;
                         }
                     }
                 }
-                return documentIds;
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error saving documents: {ex.Message}");
-                return new System.Collections.Generic.List<int>();
+                MessageBox.Show($"Error saving document: {ex.Message}");
+                return 0;
             }
         }
     }
@@ -610,5 +720,21 @@ namespace WarehouseManagementUnia.ViewModels
             get => _quantity;
             set { _quantity = value; OnPropertyChanged(); }
         }
+    }
+
+    public class DocumentReportData
+    {
+        public string DocumentType { get; set; }
+        public DateTime DocumentDate { get; set; }
+        public string WarehouseCode { get; set; }
+        public string ContractorName { get; set; }
+        public string ContractorNIP { get; set; }
+        public bool IncludeDocumentType { get; set; }
+        public bool IncludeName { get; set; }
+        public bool IncludeQuantity { get; set; }
+        public bool IncludeContractor { get; set; }
+        public bool IncludeWarehouse { get; set; }
+        public bool IsContractorVisible { get; set; }
+        public List<SelectedProductItem> Items { get; set; } = new List<SelectedProductItem>();
     }
 }

@@ -2,6 +2,7 @@
 using System.Collections.ObjectModel;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Windows;
 using System.Windows.Input;
 using WarehouseManagementUnia.Models;
 
@@ -14,6 +15,7 @@ namespace WarehouseManagementUnia.ViewModels
         private ObservableCollection<Contractor> _contractors;
         private DocumentType _selectedDocumentType;
         private Contractor _selectedContractor;
+        private Document _selectedDocument;
         private readonly string _userRole;
 
         public ObservableCollection<Document> Documents
@@ -56,7 +58,14 @@ namespace WarehouseManagementUnia.ViewModels
             }
         }
 
+        public Document SelectedDocument
+        {
+            get => _selectedDocument;
+            set { _selectedDocument = value; OnPropertyChanged(); }
+        }
+
         public ICommand ClearFiltersCommand { get; }
+        public ICommand PrintDocumentCommand { get; }
 
         public DocumentsViewModel(string userRole)
         {
@@ -64,19 +73,18 @@ namespace WarehouseManagementUnia.ViewModels
             Documents = new ObservableCollection<Document>();
             DocumentTypes = new ObservableCollection<DocumentType>();
             Contractors = new ObservableCollection<Contractor>();
-            ClearFiltersCommand = new RelayCommand<object>(ExecuteClearFilters);
-            LoadDocumentTypes();
-            LoadContractors();
-            LoadDocuments();
+            ClearFiltersCommand = new RelayCommand<object>(ClearFilters);
+            PrintDocumentCommand = new RelayCommand<Document>(PrintDocument, CanPrintDocument);
+            LoadData();
         }
 
-        private void LoadDocumentTypes()
+        private void LoadData()
         {
-            DocumentTypes.Clear();
-            DocumentTypes.Add(new DocumentType { DocumentTypeId = 0, TypeName = "All" }); // Add "All" option
             using (var conn = new SqlConnection("Server=(localdb)\\MSSQLLocalDB;Database=UniaWarehouse;Trusted_Connection=True;"))
             {
                 conn.Open();
+
+                // Load Document Types
                 var cmd = new SqlCommand("SELECT DocumentTypeId, TypeName FROM DocumentTypes", conn);
                 using (var reader = cmd.ExecuteReader())
                 {
@@ -89,17 +97,9 @@ namespace WarehouseManagementUnia.ViewModels
                         });
                     }
                 }
-            }
-        }
 
-        private void LoadContractors()
-        {
-            Contractors.Clear();
-            Contractors.Add(new Contractor { ContractorId = 0, Name = "All" }); // Add "All" option
-            using (var conn = new SqlConnection("Server=(localdb)\\MSSQLLocalDB;Database=UniaWarehouse;Trusted_Connection=True;"))
-            {
-                conn.Open();
-                var cmd = new SqlCommand("SELECT ContractorId, Name, NIP FROM Contractors", conn);
+                // Load Contractors
+                cmd = new SqlCommand("SELECT ContractorId, Name, NIP FROM Contractors", conn);
                 using (var reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
@@ -113,6 +113,7 @@ namespace WarehouseManagementUnia.ViewModels
                     }
                 }
             }
+            LoadDocuments();
         }
 
         private void LoadDocuments()
@@ -121,24 +122,17 @@ namespace WarehouseManagementUnia.ViewModels
             using (var conn = new SqlConnection("Server=(localdb)\\MSSQLLocalDB;Database=UniaWarehouse;Trusted_Connection=True;"))
             {
                 conn.Open();
-                var query = "SELECT d.DocumentId, dt.TypeName, p.Name, d.Quantity, w.WarehouseCode, c.Name, c.NIP, d.DocumentDate " +
-                            "FROM Documents d " +
-                            "JOIN DocumentTypes dt ON d.DocumentTypeId = dt.DocumentTypeId " +
-                            "JOIN Products p ON d.ProductId = p.ProductId " +
-                            "JOIN Warehouses w ON d.WarehouseId = w.WarehouseId " +
-                            "LEFT JOIN Contractors c ON d.ContractorId = c.ContractorId " +
-                            "WHERE 1=1";
-                if (SelectedDocumentType != null && SelectedDocumentType.DocumentTypeId != 0)
-                    query += " AND d.DocumentTypeId = @DocumentTypeId";
-                if (SelectedContractor != null && SelectedContractor.ContractorId != 0)
-                    query += " AND d.ContractorId = @ContractorId";
-
+                var query = @"SELECT d.DocumentId, dt.TypeName AS DocumentTypeName, w.WarehouseCode, 
+                                    c.Name AS ContractorName, c.NIP AS ContractorNIP, d.DocumentDate
+                              FROM Documents d
+                              JOIN DocumentTypes dt ON d.DocumentTypeId = dt.DocumentTypeId
+                              JOIN Warehouses w ON d.WarehouseId = w.WarehouseId
+                              LEFT JOIN Contractors c ON d.ContractorId = c.ContractorId
+                              WHERE (@DocumentTypeId IS NULL OR d.DocumentTypeId = @DocumentTypeId)
+                                AND (@ContractorId IS NULL OR d.ContractorId = @ContractorId)";
                 var cmd = new SqlCommand(query, conn);
-                if (SelectedDocumentType != null && SelectedDocumentType.DocumentTypeId != 0)
-                    cmd.Parameters.AddWithValue("@DocumentTypeId", SelectedDocumentType.DocumentTypeId);
-                if (SelectedContractor != null && SelectedContractor.ContractorId != 0)
-                    cmd.Parameters.AddWithValue("@ContractorId", SelectedContractor.ContractorId);
-
+                cmd.Parameters.AddWithValue("@DocumentTypeId", SelectedDocumentType?.DocumentTypeId ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@ContractorId", SelectedContractor?.ContractorId ?? (object)DBNull.Value);
                 using (var reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
@@ -147,23 +141,39 @@ namespace WarehouseManagementUnia.ViewModels
                         {
                             DocumentId = reader.GetInt32(0),
                             DocumentTypeName = reader.GetString(1),
-                            ProductName = reader.GetString(2),
-                            Quantity = reader.GetInt32(3),
-                            WarehouseCode = reader.GetString(4),
-                            ContractorName = reader.IsDBNull(5) ? null : reader.GetString(5),
-                            ContractorNIP = reader.IsDBNull(6) ? null : reader.GetString(6),
-                            DocumentDate = reader.GetDateTime(7)
+                            WarehouseCode = reader.GetString(2),
+                            ContractorName = reader.IsDBNull(3) ? null : reader.GetString(3),
+                            ContractorNIP = reader.IsDBNull(4) ? null : reader.GetString(4),
+                            DocumentDate = reader.GetDateTime(5)
                         });
                     }
                 }
             }
         }
 
-        private void ExecuteClearFilters(object parameter)
+        private void ClearFilters(object parameter)
         {
-            SelectedDocumentType = DocumentTypes.FirstOrDefault(dt => dt.DocumentTypeId == 0); // Select "All"
-            SelectedContractor = Contractors.FirstOrDefault(c => c.ContractorId == 0); // Select "All"
+            SelectedDocumentType = null;
+            SelectedContractor = null;
             LoadDocuments();
+        }
+
+        private bool CanPrintDocument(Document document)
+        {
+            return document != null;
+        }
+
+        private void PrintDocument(Document document)
+        {
+            if (document == null) return;
+
+            var documentViewModel = new DocumentViewModel(defaultSourceWarehouse: null); // Fixed parameter name
+            documentViewModel.GeneratePdfReport(document.DocumentId, true, saveFileDialog =>
+            {
+                saveFileDialog.Filter = "PDF files (*.pdf)|*.pdf";
+                saveFileDialog.FileName = $"COPY_Document_{document.DocumentId}_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+                saveFileDialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            });
         }
     }
 }
