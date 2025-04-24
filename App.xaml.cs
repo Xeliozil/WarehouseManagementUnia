@@ -1,14 +1,14 @@
 ﻿using System.Windows;
+using WarehouseManagementUnia.Views;
 
 namespace WarehouseManagementUnia
 {
     public partial class App : Application
     {
-        protected override void OnStartup(StartupEventArgs e)
+        private void Application_Startup(object sender, StartupEventArgs e)
         {
-            base.OnStartup(e);
-            var loginWindow = new LoginWindow();
-            loginWindow.Show();
+            var loginView = new LoginView();
+            loginView.Show();
         }
     }
 }

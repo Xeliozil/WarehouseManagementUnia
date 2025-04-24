@@ -5,10 +5,10 @@
     <Grid>
         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
             <TextBlock Text="Username:" Margin="10"/>
-            <TextBox Text="{Binding Username}" Width="200" Margin="10"/>
+            <TextBox Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}" Width="200" Margin="10"/>
             <TextBlock Text="Password:" Margin="10"/>
-            <PasswordBox x:Name="PasswordBox" Width="200" Margin="10"/>
-            <Button Content="Login" Command="{Binding LoginCommand}" Width="100" Margin="10"/>
+            <PasswordBox x:Name="PasswordBox" Width="200" Margin="10" KeyDown="PasswordBox_KeyDown"/>
+            <Button Content="Login" Command="{Binding LoginCommand}" CommandParameter="{Binding ElementName=PasswordBox}" Width="100" Margin="10"/>
         </StackPanel>
     </Grid>
 </Window>

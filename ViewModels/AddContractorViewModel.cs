@@ -1,7 +1,6 @@
 ﻿using System.Data.SqlClient;
-using System.Windows.Input;
 using System.Windows;
-
+using System.Windows.Input;
 
 namespace WarehouseManagementUnia.ViewModels
 {
@@ -9,6 +8,7 @@ namespace WarehouseManagementUnia.ViewModels
     {
         private string _name;
         private string _address;
+        private string _nip;
 
         public string Name
         {
@@ -22,6 +22,12 @@ namespace WarehouseManagementUnia.ViewModels
             set { _address = value; OnPropertyChanged(); }
         }
 
+        public string NIP
+        {
+            get => _nip;
+            set { _nip = value; OnPropertyChanged(); }
+        }
+
         public ICommand AddCommand { get; }
 
         public AddContractorViewModel()
@@ -31,15 +37,34 @@ namespace WarehouseManagementUnia.ViewModels
 
         private void ExecuteAdd(object parameter)
         {
-            using (var conn = new SqlConnection("Server=(localdb)\\MSSQLLocalDB;Database=UniaWarehouse;Trusted_Connection=True;"))
+            if (string.IsNullOrWhiteSpace(Name))
             {
-                conn.Open();
-                var cmd = new SqlCommand("INSERT INTO Contractors (Name, Address) VALUES (@Name, @Address)", conn);
-                cmd.Parameters.AddWithValue("@Name", Name);
-                cmd.Parameters.AddWithValue("@Address", Address ?? (object)DBNull.Value);
-                cmd.ExecuteNonQuery();
+                MessageBox.Show("Name is required.");
+                return;
             }
-            Application.Current.Windows[Application.Current.Windows.Count - 1].Close();
+
+            try
+            {
+                using (var conn = new SqlConnection("Server=(localdb)\\MSSQLLocalDB;Database=UniaWarehouse;Trusted_Connection=True;"))
+                {
+                    conn.Open();
+                    var cmd = new SqlCommand(
+                        "INSERT INTO Contractors (Name, Address, NIP) VALUES (@Name, @Address, @NIP)", conn);
+                    cmd.Parameters.AddWithValue("@Name", Name);
+                    cmd.Parameters.AddWithValue("@Address", (object)Address ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@NIP", (object)NIP ?? DBNull.Value);
+                    cmd.ExecuteNonQuery();
+                }
+                MessageBox.Show("Contractor added successfully.");
+                if (parameter is Window window)
+                {
+                    window.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error adding contractor: {ex.Message}");
+            }
         }
     }
 }

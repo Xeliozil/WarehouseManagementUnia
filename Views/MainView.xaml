@@ -8,16 +8,14 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Navigation Bar -->
-        <StackPanel Orientation="Horizontal" Background="LightGray">
-            <Button Content="Stock" Command="{Binding NavigateCommand}" CommandParameter="Stock" Margin="5"/>
-            <Button Content="Contractors" Command="{Binding NavigateCommand}" CommandParameter="Contractors" Margin="5"/>
-            <Button Content="Documents" Command="{Binding NavigateCommand}" CommandParameter="Documents" Margin="5"/>
-            <Button Content="Empty" Command="{Binding NavigateCommand}" CommandParameter="Empty" Margin="5"/>
-            <TextBlock Text="{Binding CurrentViewTitle}" VerticalAlignment="Center" Margin="10"/>
+        <!-- Topbar -->
+        <StackPanel Orientation="Horizontal" Background="LightGray" Margin="5">
+            <Button Content="Stock" Command="{Binding ShowStockViewCommand}" Margin="5" Width="100"/>
+            <Button Content="Contractors" Command="{Binding ShowContractorsViewCommand}" Margin="5" Width="100"/>
+            <Button Content="Documents" Command="{Binding ShowDocumentsViewCommand}" Margin="5" Width="100"/>
         </StackPanel>
 
         <!-- Content Area -->
-        <ContentControl Grid.Row="1" Content="{Binding CurrentView}"/>
+        <ContentControl Grid.Row="1" Content="{Binding CurrentView}" Margin="10"/>
     </Grid>
 </Window>

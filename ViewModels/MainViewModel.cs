@@ -1,14 +1,14 @@
-﻿using System.Windows.Input;
+﻿using System;
+using System.Windows;
+using System.Windows.Input;
 using WarehouseManagementUnia.Views;
-
 
 namespace WarehouseManagementUnia.ViewModels
 {
     public class MainViewModel : ViewModelBase
     {
-        private object _currentView;
-        private string _currentViewTitle;
         private readonly string _userRole;
+        private object _currentView;
 
         public object CurrentView
         {
@@ -16,41 +16,53 @@ namespace WarehouseManagementUnia.ViewModels
             set { _currentView = value; OnPropertyChanged(); }
         }
 
-        public string CurrentViewTitle
-        {
-            get => _currentViewTitle;
-            set { _currentViewTitle = value; OnPropertyChanged(); }
-        }
-
-        public ICommand NavigateCommand { get; }
+        public ICommand ShowStockViewCommand { get; }
+        public ICommand ShowContractorsViewCommand { get; }
+        public ICommand ShowDocumentsViewCommand { get; }
 
         public MainViewModel(string userRole)
         {
             _userRole = userRole;
-            NavigateCommand = new RelayCommand<string>(Navigate);
-            Navigate("Stock"); // Default view
+            ShowStockViewCommand = new RelayCommand<object>(ShowStockView);
+            ShowContractorsViewCommand = new RelayCommand<object>(ShowContractorsView);
+            ShowDocumentsViewCommand = new RelayCommand<object>(ShowDocumentsView);
+            // Set default view
+            ShowStockView(null);
         }
 
-        private void Navigate(string viewName)
+        private void ShowStockView(object parameter)
         {
-            switch (viewName)
+            try
             {
-                case "Stock":
-                    CurrentView = new StockView { DataContext = new StockViewModel(_userRole) };
-                    CurrentViewTitle = "Stock Status";
-                    break;
-                case "Contractors":
-                    CurrentView = new ContractorsView { DataContext = new ContractorsViewModel(_userRole) };
-                    CurrentViewTitle = "Contractors";
-                    break;
-                case "Documents":
-                    CurrentView = new DocumentsView { DataContext = new DocumentsViewModel(_userRole) };
-                    CurrentViewTitle = "Documents";
-                    break;
-                case "Empty":
-                    CurrentView = new EmptyView();
-                    CurrentViewTitle = "Empty View";
-                    break;
+                CurrentView = new StockView { DataContext = new StockViewModel(_userRole) };
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error opening Stock view: {ex.Message}");
+            }
+        }
+
+        private void ShowContractorsView(object parameter)
+        {
+            try
+            {
+                CurrentView = new ContractorsView { DataContext = new ContractorsViewModel(_userRole) };
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error opening Contractors view: {ex.Message}");
+            }
+        }
+
+        private void ShowDocumentsView(object parameter)
+        {
+            try
+            {
+                CurrentView = new DocumentsView { DataContext = new DocumentsViewModel(_userRole) };
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error opening Documents view: {ex.Message}");
             }
         }
     }

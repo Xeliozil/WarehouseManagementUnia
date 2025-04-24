@@ -1,5 +1,7 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.ObjectModel;
 using System.Data.SqlClient;
+using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 using WarehouseManagementUnia.Models;
@@ -78,9 +80,13 @@ namespace WarehouseManagementUnia.ViewModels
                     }
                 }
             }
+            if (Warehouses.Any())
+            {
+                SelectedWarehouse = Warehouses.First();
+            }
         }
 
-        private void LoadProducts()
+        public void LoadProducts()
         {
             if (SelectedWarehouse == null) return;
             Products.Clear();
@@ -89,7 +95,7 @@ namespace WarehouseManagementUnia.ViewModels
                 conn.Open();
                 var query = "SELECT p.ProductId, p.Name, p.Quantity, w.WarehouseCode " +
                             "FROM Products p JOIN Warehouses w ON p.WarehouseId = w.WarehouseId " +
-                            "WHERE p.WarehouseId = @WarehouseId";
+                            "WHERE p.WarehouseId = @WarehouseId AND p.Quantity > 0";
                 if (!string.IsNullOrEmpty(FilterName))
                     query += " AND p.Name LIKE @FilterName";
 
@@ -126,6 +132,11 @@ namespace WarehouseManagementUnia.ViewModels
                 MessageBox.Show("Only admins can add products.");
                 return;
             }
+            if (SelectedWarehouse == null)
+            {
+                MessageBox.Show("Please select a warehouse before adding a product.");
+                return;
+            }
             var addProductWindow = new AddProductView { DataContext = new AddProductViewModel(SelectedWarehouse) };
             addProductWindow.ShowDialog();
             LoadProducts();
@@ -138,9 +149,15 @@ namespace WarehouseManagementUnia.ViewModels
                 MessageBox.Show("Only admins can generate documents.");
                 return;
             }
-            var documentWindow = new DocumentView { DataContext = new DocumentViewModel(SelectedWarehouse) };
+            if (SelectedWarehouse == null)
+            {
+                MessageBox.Show("Please select a warehouse before generating a document.");
+                return;
+            }
+            var documentViewModel = new DocumentViewModel(SelectedWarehouse);
+            documentViewModel.OnDocumentGenerated = LoadProducts; // Refresh products after document generation
+            var documentWindow = new DocumentView { DataContext = documentViewModel };
             documentWindow.ShowDialog();
-            LoadProducts();
         }
     }
 }
