@@ -58,7 +58,9 @@ namespace WarehouseManagementUnia.ViewModels
         {
             try
             {
-                CurrentView = new DocumentsView { DataContext = new DocumentsViewModel(_userRole) };
+                var documentsView = new DocumentsView();
+                documentsView.DataContext = new DocumentsViewModel(_userRole);
+                CurrentView = documentsView;
             }
             catch (Exception ex)
             {
