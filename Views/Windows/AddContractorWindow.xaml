@@ -4,8 +4,8 @@
         Title="Dodaj Kontrahenta" Height="250" Width="400">
     <Grid Margin="10">
         <StackPanel>
-            <TextBox x:Name="NameTextBox" Margin="0,0,0,10" PlaceholderText="Nazwa kontrahenta"/>
-            <TextBox x:Name="AddressTextBox" Margin="0,0,0,10" PlaceholderText="Adres"/>
+            <TextBox x:Name="NameTextBox" Margin="0,0,0,10" Text="Nazwa kontrahenta"/>
+            <TextBox x:Name="AddressTextBox" Margin="0,0,0,10" Text="Adres"/>
             <Button Content="Dodaj" Click="AddContractor_Click"/>
         </StackPanel>
     </Grid>
