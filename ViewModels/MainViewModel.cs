@@ -1,71 +1,83 @@
 ﻿using System;
+using System.Data.SqlClient;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
+using WarehouseManagementUnia.Models;
 using WarehouseManagementUnia.Views;
 
 namespace WarehouseManagementUnia.ViewModels
 {
     public class MainViewModel : ViewModelBase
     {
-        private readonly string _userRole;
-        private object _currentView;
+        private UserControl _currentView;
+        private Warehouse _defaultWarehouse;
+        private string _userRole;
 
-        public object CurrentView
+        public UserControl CurrentView
         {
             get => _currentView;
             set { _currentView = value; OnPropertyChanged(); }
         }
 
-        public ICommand ShowStockViewCommand { get; }
-        public ICommand ShowContractorsViewCommand { get; }
-        public ICommand ShowDocumentsViewCommand { get; }
+        public ICommand NavigateStockCommand { get; }
+        public ICommand NavigateContractorsCommand { get; }
+        public ICommand NavigateDocumentsCommand { get; }
+
+        public MainViewModel()
+            : this(null)
+        {
+        }
 
         public MainViewModel(string userRole)
         {
             _userRole = userRole;
-            ShowStockViewCommand = new RelayCommand<object>(ShowStockView);
-            ShowContractorsViewCommand = new RelayCommand<object>(ShowContractorsView);
-            ShowDocumentsViewCommand = new RelayCommand<object>(ShowDocumentsView);
-            // Set default view
-            ShowStockView(null);
-        }
+            NavigateStockCommand = new RelayCommand<object>(ExecuteNavigateStock);
+            NavigateContractorsCommand = new RelayCommand<object>(ExecuteNavigateContractors);
+            NavigateDocumentsCommand = new RelayCommand<object>(ExecuteNavigateDocuments);
 
-        private void ShowStockView(object parameter)
-        {
+            // Load default warehouse
             try
             {
-                CurrentView = new StockView { DataContext = new StockViewModel(_userRole) };
+                using (var conn = new SqlConnection("Server=(localdb)\\MSSQLLocalDB;Database=UniaWarehouse;Trusted_Connection=True;"))
+                {
+                    conn.Open();
+                    var cmd = new SqlCommand("SELECT TOP 1 WarehouseId, WarehouseCode FROM Warehouses", conn);
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            _defaultWarehouse = new Warehouse
+                            {
+                                WarehouseId = reader.GetInt32(0),
+                                WarehouseCode = reader.GetString(1)
+                            };
+                        }
+                    }
+                }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error opening Stock view: {ex.Message}");
+                MessageBox.Show($"Error loading default warehouse: {ex.Message}");
             }
+
+            // Set initial view
+            ExecuteNavigateStock(null);
         }
 
-        private void ShowContractorsView(object parameter)
+        private void ExecuteNavigateStock(object parameter)
         {
-            try
-            {
-                CurrentView = new ContractorsView { DataContext = new ContractorsViewModel(_userRole) };
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error opening Contractors view: {ex.Message}");
-            }
+            CurrentView = new StockView { DataContext = new StockViewModel(_defaultWarehouse, this) };
         }
 
-        private void ShowDocumentsView(object parameter)
+        private void ExecuteNavigateContractors(object parameter)
         {
-            try
-            {
-                var documentsView = new DocumentsView();
-                documentsView.DataContext = new DocumentsViewModel(_userRole);
-                CurrentView = documentsView;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error opening Documents view: {ex.Message}");
-            }
+            CurrentView = new ContractorsView { DataContext = new ContractorsViewModel(_userRole) };
+        }
+
+        private void ExecuteNavigateDocuments(object parameter)
+        {
+            CurrentView = new DocumentsView { DataContext = new DocumentsViewModel(_userRole) };
         }
     }
 }

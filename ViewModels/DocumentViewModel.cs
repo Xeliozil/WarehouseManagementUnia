@@ -10,6 +10,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 using WarehouseManagementUnia.Models;
+using WarehouseManagementUnia.Views;
 
 namespace WarehouseManagementUnia.ViewModels
 {
@@ -28,12 +29,14 @@ namespace WarehouseManagementUnia.ViewModels
         private Warehouse _targetWarehouse;
         private bool _includeName = true;
         private bool _includeQuantity = true;
+        private bool _includePrice = true;
         private bool _includeDocumentType = true;
         private bool _includeContractor = true;
         private bool _includeWarehouse = true;
         private bool _isContractorVisible;
         private bool _isTargetWarehouseVisible;
         private bool _isSourceWarehouseEditable;
+        private bool _isDeliveryDocument;
         private readonly Warehouse _defaultSourceWarehouse;
         public Action OnDocumentGenerated { get; set; }
 
@@ -80,6 +83,7 @@ namespace WarehouseManagementUnia.ViewModels
             {
                 _selectedDocumentType = value;
                 OnPropertyChanged();
+                IsDeliveryDocument = _selectedDocumentType?.TypeName == "Delivery";
                 UpdateVisibility();
             }
         }
@@ -126,6 +130,12 @@ namespace WarehouseManagementUnia.ViewModels
             set { _includeQuantity = value; OnPropertyChanged(); }
         }
 
+        public bool IncludePrice
+        {
+            get => _includePrice;
+            set { _includePrice = value; OnPropertyChanged(); }
+        }
+
         public bool IncludeDocumentType
         {
             get => _includeDocumentType;
@@ -162,11 +172,18 @@ namespace WarehouseManagementUnia.ViewModels
             set { _isSourceWarehouseEditable = value; OnPropertyChanged(); }
         }
 
+        public bool IsDeliveryDocument
+        {
+            get => _isDeliveryDocument;
+            set { _isDeliveryDocument = value; OnPropertyChanged(); }
+        }
+
         public ICommand GeneratePdfCommand { get; }
         public ICommand GenerateCsvCommand { get; }
         public ICommand DocumentTypeChangedCommand { get; }
         public ICommand AddProductCommand { get; }
         public ICommand RemoveProductCommand { get; }
+        public ICommand AddNewProductCommand { get; }
 
         public DocumentViewModel(Warehouse defaultSourceWarehouse)
         {
@@ -182,6 +199,7 @@ namespace WarehouseManagementUnia.ViewModels
             DocumentTypeChangedCommand = new RelayCommand<object>(ExecuteDocumentTypeChanged);
             AddProductCommand = new RelayCommand<object>(ExecuteAddProduct, CanAddProduct);
             RemoveProductCommand = new RelayCommand<object>(ExecuteRemoveProduct, CanRemoveProduct);
+            AddNewProductCommand = new RelayCommand<object>(ExecuteAddNewProduct, CanAddNewProduct);
             if (defaultSourceWarehouse != null)
             {
                 LoadData();
@@ -251,7 +269,7 @@ namespace WarehouseManagementUnia.ViewModels
             using (var conn = new SqlConnection("Server=(localdb)\\MSSQLLocalDB;Database=UniaWarehouse;Trusted_Connection=True;"))
             {
                 conn.Open();
-                var cmd = new SqlCommand("SELECT ProductId, Name, Quantity FROM Products WHERE WarehouseId = @WarehouseId AND Quantity > 0", conn);
+                var cmd = new SqlCommand("SELECT ProductId, Name, Quantity, Price FROM Products WHERE WarehouseId = @WarehouseId AND Quantity > 0", conn);
                 cmd.Parameters.AddWithValue("@WarehouseId", SourceWarehouse.WarehouseId);
                 using (var reader = cmd.ExecuteReader())
                 {
@@ -261,7 +279,8 @@ namespace WarehouseManagementUnia.ViewModels
                         {
                             ProductId = reader.GetInt32(0),
                             Name = reader.GetString(1),
-                            Quantity = reader.GetInt32(2)
+                            Quantity = reader.GetInt32(2),
+                            Price = reader.GetDecimal(3)
                         });
                     }
                 }
@@ -320,6 +339,50 @@ namespace WarehouseManagementUnia.ViewModels
             if (SelectedProducts.Any())
             {
                 SelectedProducts.Remove(SelectedProducts.Last());
+            }
+        }
+
+        private bool CanAddNewProduct(object parameter)
+        {
+            return IsDeliveryDocument && SourceWarehouse != null;
+        }
+
+        private void ExecuteAddNewProduct(object parameter)
+        {
+            var addProductDialog = new AddProductDialog();
+            if (addProductDialog.ShowDialog() == true)
+            {
+                try
+                {
+                    using (var conn = new SqlConnection("Server=(localdb)\\MSSQLLocalDB;Database=UniaWarehouse;Trusted_Connection=True;"))
+                    {
+                        conn.Open();
+                        var cmd = new SqlCommand(
+                            "INSERT INTO Products (Name, Quantity, Price, WarehouseId) " +
+                            "OUTPUT INSERTED.ProductId " +
+                            "VALUES (@Name, @Quantity, @Price, @WarehouseId)", conn);
+                        cmd.Parameters.AddWithValue("@Name", addProductDialog.ProductName);
+                        cmd.Parameters.AddWithValue("@Quantity", addProductDialog.Quantity);
+                        cmd.Parameters.AddWithValue("@Price", addProductDialog.Price);
+                        cmd.Parameters.AddWithValue("@WarehouseId", SourceWarehouse.WarehouseId);
+                        int productId = (int)cmd.ExecuteScalar();
+
+                        var newProduct = new Product
+                        {
+                            ProductId = productId,
+                            Name = addProductDialog.ProductName,
+                            Quantity = addProductDialog.Quantity,
+                            Price = addProductDialog.Price
+                        };
+                        AvailableProducts.Add(newProduct);
+                        SelectedProducts.Add(new SelectedProductItem { Product = newProduct, Quantity = addProductDialog.Quantity });
+                        MessageBox.Show($"Product '{newProduct.Name}' added successfully.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error adding product: {ex.Message}");
+                }
             }
         }
 
@@ -403,6 +466,7 @@ namespace WarehouseManagementUnia.ViewModels
                 if (reportData.IncludeDocumentType) headers.Add("Document Type");
                 if (reportData.IncludeName) headers.Add("Product");
                 if (reportData.IncludeQuantity) headers.Add("Quantity");
+                if (reportData.IncludePrice) headers.Add("Price");
                 if (reportData.IncludeContractor && reportData.IsContractorVisible) headers.Add("Contractor");
                 if (reportData.IncludeWarehouse) headers.Add("Warehouse");
 
@@ -468,6 +532,11 @@ namespace WarehouseManagementUnia.ViewModels
                 if (columnIndex == currentIndex) return item.Quantity.ToString();
                 currentIndex++;
             }
+            if (reportData.IncludePrice)
+            {
+                if (columnIndex == currentIndex) return item.Product.Price.ToString("C2");
+                currentIndex++;
+            }
             if (reportData.IncludeContractor && reportData.IsContractorVisible)
             {
                 if (columnIndex == currentIndex) return $"{reportData.ContractorName} (NIP: {reportData.ContractorNIP ?? "N/A"})";
@@ -490,7 +559,7 @@ namespace WarehouseManagementUnia.ViewModels
                 // Fetch document metadata
                 var cmd = new SqlCommand(
                     @"SELECT dt.TypeName, d.DocumentDate, w.WarehouseCode, c.Name AS ContractorName, c.NIP, 
-                             d.IncludeDocumentType, d.IncludeName, d.IncludeQuantity, d.IncludeContractor, d.IncludeWarehouse
+                             d.IncludeDocumentType, d.IncludeName, d.IncludeQuantity, d.IncludePrice, d.IncludeContractor, d.IncludeWarehouse
                       FROM Documents d
                       JOIN DocumentTypes dt ON d.DocumentTypeId = dt.DocumentTypeId
                       JOIN Warehouses w ON d.WarehouseId = w.WarehouseId
@@ -511,14 +580,15 @@ namespace WarehouseManagementUnia.ViewModels
                     reportData.IncludeDocumentType = reader.GetBoolean(5);
                     reportData.IncludeName = reader.GetBoolean(6);
                     reportData.IncludeQuantity = reader.GetBoolean(7);
-                    reportData.IncludeContractor = reader.GetBoolean(8);
-                    reportData.IncludeWarehouse = reader.GetBoolean(9);
+                    reportData.IncludePrice = reader.GetBoolean(8);
+                    reportData.IncludeContractor = reader.GetBoolean(9);
+                    reportData.IncludeWarehouse = reader.GetBoolean(10);
                     reportData.IsContractorVisible = reportData.DocumentType != "Transfer";
                 }
 
                 // Fetch document items
                 cmd = new SqlCommand(
-                    @"SELECT p.ProductId, p.Name, p.Quantity, di.Quantity AS DocumentQuantity
+                    @"SELECT p.ProductId, p.Name, p.Quantity, di.Quantity AS DocumentQuantity, p.Price
                       FROM DocumentItems di
                       JOIN Products p ON di.ProductId = p.ProductId
                       WHERE di.DocumentId = @DocumentId", conn);
@@ -533,7 +603,8 @@ namespace WarehouseManagementUnia.ViewModels
                             {
                                 ProductId = reader.GetInt32(0),
                                 Name = reader.GetString(1),
-                                Quantity = reader.GetInt32(2)
+                                Quantity = reader.GetInt32(2),
+                                Price = reader.GetDecimal(4)
                             },
                             Quantity = reader.GetInt32(3)
                         });
@@ -571,6 +642,7 @@ namespace WarehouseManagementUnia.ViewModels
                     var headers = new List<string>();
                     if (IncludeName) headers.Add("Product");
                     if (IncludeQuantity) headers.Add("Quantity");
+                    if (IncludePrice) headers.Add("Price");
                     if (IncludeDocumentType) headers.Add("Document Type");
                     if (IncludeContractor && IsContractorVisible) headers.Add("Contractor");
                     if (IncludeWarehouse) headers.Add("Warehouse");
@@ -582,6 +654,7 @@ namespace WarehouseManagementUnia.ViewModels
                         var data = new List<string>();
                         if (IncludeName) data.Add(item.Product.Name);
                         if (IncludeQuantity) data.Add(item.Quantity.ToString());
+                        if (IncludePrice) data.Add(item.Product.Price.ToString("C2"));
                         if (IncludeDocumentType) data.Add(SelectedDocumentType.TypeName);
                         if (IncludeContractor && IsContractorVisible) data.Add($"{SelectedContractor?.Name} (NIP: {SelectedContractor?.NIP ?? "N/A"})");
                         if (IncludeWarehouse) data.Add(SourceWarehouse.WarehouseCode);
@@ -612,10 +685,10 @@ namespace WarehouseManagementUnia.ViewModels
                             // Insert single document
                             var cmd = new SqlCommand(
                                 @"INSERT INTO Documents (DocumentTypeId, WarehouseId, ContractorId, DocumentDate, 
-                                                        IncludeDocumentType, IncludeName, IncludeQuantity, IncludeContractor, IncludeWarehouse)
+                                                        IncludeDocumentType, IncludeName, IncludeQuantity, IncludePrice, IncludeContractor, IncludeWarehouse)
                                   OUTPUT INSERTED.DocumentId
                                   VALUES (@DocumentTypeId, @WarehouseId, @ContractorId, @DocumentDate, 
-                                          @IncludeDocumentType, @IncludeName, @IncludeQuantity, @IncludeContractor, @IncludeWarehouse)", conn, transaction);
+                                          @IncludeDocumentType, @IncludeName, @IncludeQuantity, @IncludePrice, @IncludeContractor, @IncludeWarehouse)", conn, transaction);
                             cmd.Parameters.AddWithValue("@DocumentTypeId", SelectedDocumentType.DocumentTypeId);
                             cmd.Parameters.AddWithValue("@WarehouseId", SourceWarehouse.WarehouseId);
                             cmd.Parameters.AddWithValue("@ContractorId", SelectedContractor != null && IsContractorVisible ? SelectedContractor.ContractorId : (object)DBNull.Value);
@@ -623,6 +696,7 @@ namespace WarehouseManagementUnia.ViewModels
                             cmd.Parameters.AddWithValue("@IncludeDocumentType", IncludeDocumentType);
                             cmd.Parameters.AddWithValue("@IncludeName", IncludeName);
                             cmd.Parameters.AddWithValue("@IncludeQuantity", IncludeQuantity);
+                            cmd.Parameters.AddWithValue("@IncludePrice", IncludePrice);
                             cmd.Parameters.AddWithValue("@IncludeContractor", IncludeContractor && IsContractorVisible);
                             cmd.Parameters.AddWithValue("@IncludeWarehouse", IncludeWarehouse);
                             int documentId = (int)cmd.ExecuteScalar();
@@ -676,9 +750,11 @@ namespace WarehouseManagementUnia.ViewModels
                                     cmd = new SqlCommand(
                                         @"IF EXISTS (SELECT 1 FROM Products WHERE Name = @Name AND WarehouseId = @TargetWarehouseId)
                                           UPDATE Products SET Quantity = Quantity + @Quantity WHERE Name = @Name AND WarehouseId = @TargetWarehouseId
-                                          ELSE INSERT INTO Products (Name, Quantity, WarehouseId) VALUES (@Name, @Quantity, @TargetWarehouseId)", conn, transaction);
+                                          ELSE INSERT INTO Products (Name, Quantity, Price, WarehouseId) 
+                                          VALUES (@Name, @Quantity, @Price, @TargetWarehouseId)", conn, transaction);
                                     cmd.Parameters.AddWithValue("@Name", item.Product.Name);
                                     cmd.Parameters.AddWithValue("@Quantity", item.Quantity);
+                                    cmd.Parameters.AddWithValue("@Price", item.Product.Price);
                                     cmd.Parameters.AddWithValue("@TargetWarehouseId", TargetWarehouse.WarehouseId);
                                     cmd.ExecuteNonQuery();
                                 }
@@ -732,6 +808,7 @@ namespace WarehouseManagementUnia.ViewModels
         public bool IncludeDocumentType { get; set; }
         public bool IncludeName { get; set; }
         public bool IncludeQuantity { get; set; }
+        public bool IncludePrice { get; set; }
         public bool IncludeContractor { get; set; }
         public bool IncludeWarehouse { get; set; }
         public bool IsContractorVisible { get; set; }

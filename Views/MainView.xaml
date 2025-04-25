@@ -1,21 +1,21 @@
-﻿<Window x:Class="WarehouseManagementUnia.Views.MainView"
+﻿<Window x:Class="WarehouseManagementUnia.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Warehouse Management - Unia" Height="600" Width="800">
+        Title="Unia Warehouse Management" Height="600" Width="800" WindowStartupLocation="CenterScreen">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Topbar -->
-        <StackPanel Orientation="Horizontal" Background="LightGray" Margin="5">
-            <Button Content="Stock" Command="{Binding ShowStockViewCommand}" Margin="5" Width="100"/>
-            <Button Content="Contractors" Command="{Binding ShowContractorsViewCommand}" Margin="5" Width="100"/>
-            <Button Content="Documents" Command="{Binding ShowDocumentsViewCommand}" Margin="5" Width="100"/>
+        <!-- Navigation Bar -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Background="LightGray">
+            <Button Content="Stock" Command="{Binding NavigateStockCommand}" Margin="5"/>
+            <Button Content="Contractors" Command="{Binding NavigateContractorsCommand}" Margin="5"/>
+            <Button Content="Documents" Command="{Binding NavigateDocumentsCommand}" Margin="5"/>
         </StackPanel>
 
         <!-- Content Area -->
-        <ContentControl Grid.Row="1" Content="{Binding CurrentView}" Margin="10"/>
+        <ContentControl Grid.Row="1" Content="{Binding CurrentView}"/>
     </Grid>
 </Window>

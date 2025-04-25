@@ -1,12 +1,20 @@
 ﻿using System.Windows;
+using WarehouseManagementUnia.ViewModels;
 
-namespace WarehouseManagementUnia.Views
+namespace WarehouseManagementUnia
 {
-    public partial class MainView : Window
+    public partial class MainWindow : Window
     {
-        public MainView()
+        public MainWindow()
         {
             InitializeComponent();
+            DataContext = new MainViewModel();
+        }
+
+        public MainWindow(string userRole)
+        {
+            InitializeComponent();
+            DataContext = new MainViewModel(userRole);
         }
     }
 }

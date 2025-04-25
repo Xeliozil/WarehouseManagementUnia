@@ -1,78 +1,80 @@
 ﻿using System;
-using System.Diagnostics;
+using System.Data.SqlClient;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Input;
-using WarehouseManagementUnia.Views;
 
 namespace WarehouseManagementUnia.ViewModels
 {
     public class LoginViewModel : ViewModelBase
     {
         private string _username;
+        private string _password;
+        private string _errorMessage;
+
         public string Username
         {
             get => _username;
             set { _username = value; OnPropertyChanged(); }
         }
 
+        public string Password
+        {
+            get => _password;
+            set { _password = value; OnPropertyChanged(); }
+        }
+
+        public string ErrorMessage
+        {
+            get => _errorMessage;
+            set { _errorMessage = value; OnPropertyChanged(); }
+        }
+
         public ICommand LoginCommand { get; }
 
         public LoginViewModel()
         {
-            LoginCommand = new RelayCommand<PasswordBox>(ExecuteLogin, CanExecuteLogin);
+            LoginCommand = new RelayCommand<object>(ExecuteLogin, CanExecuteLogin);
         }
 
-        private bool CanExecuteLogin(PasswordBox parameter)
+        private bool CanExecuteLogin(object parameter)
         {
-            // Allow execution unless specific conditions are added
-            return true;
+            return !string.IsNullOrWhiteSpace(Username) && !string.IsNullOrWhiteSpace(Password);
         }
 
-        private void ExecuteLogin(PasswordBox passwordBox)
+        private void ExecuteLogin(object parameter)
         {
             try
             {
-                Debug.WriteLine($"Login attempted with username: {Username}");
-                if (passwordBox == null)
+                using (var conn = new SqlConnection("Server=(localdb)\\MSSQLLocalDB;Database=UniaWarehouse;Trusted_Connection=True;"))
                 {
-                    Debug.WriteLine("PasswordBox is null");
-                    MessageBox.Show("Password field is missing.");
-                    return;
-                }
+                    conn.Open();
+                    var cmd = new SqlCommand("SELECT Role FROM Users WHERE Username = @Username AND Password = @Password", conn);
+                    cmd.Parameters.AddWithValue("@Username", Username);
+                    cmd.Parameters.AddWithValue("@Password", Password); // Note: In production, use hashed passwords
+                    var result = cmd.ExecuteScalar();
 
-                string password = passwordBox.Password;
-                Debug.WriteLine($"Password entered: {password}");
+                    if (result != null)
+                    {
+                        string userRole = result.ToString();
+                        var mainWindow = new MainWindow(userRole);
+                        mainWindow.Show();
 
-                if (Username == "admin" && password == "admin123")
-                {
-                    Debug.WriteLine("Admin login successful");
-                    OpenMainWindow("Admin");
-                }
-                else if (Username == "user" && password == "user123")
-                {
-                    Debug.WriteLine("User login successful");
-                    OpenMainWindow("User");
-                }
-                else
-                {
-                    Debug.WriteLine("Invalid credentials");
-                    MessageBox.Show("Invalid credentials");
+                        // Close the login window
+                        if (Application.Current.Windows[0] is Window loginWindow)
+                        {
+                            loginWindow.Close();
+                        }
+                    }
+                    else
+                    {
+                        ErrorMessage = "Invalid username or password.";
+                    }
                 }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Login error: {ex.Message}");
-                MessageBox.Show($"An error occurred: {ex.Message}");
+                ErrorMessage = $"Login failed: {ex.Message}";
             }
-        }
-
-        private void OpenMainWindow(string role)
-        {
-            Debug.WriteLine($"Opening MainWindow with role: {role}");
-            var mainWindow = new MainView { DataContext = new MainViewModel(role) };
-            mainWindow.Show();
-            Application.Current.Windows[0].Close();
         }
     }
 }
